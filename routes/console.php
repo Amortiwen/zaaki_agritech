@@ -8,6 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-
-Schedule::command('predictions:schedule')
-    ->everySecond();
+Schedule::command('predictions:schedule')->everyMinute();
+Schedule::command('queue:work --stop-when-empty')->everyMinute();

@@ -1,36 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Separator } from '../components/ui/separator';
-// Placeholder components since UI components don't exist yet
-const Progress = ({ value, className }: { value: number; className?: string }) => (
-  <div className={`bg-muted rounded-full h-2 ${className || ''}`}>
-    <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${value}%` }} />
-  </div>
-);
+'use client';
 
-const Tabs = ({ children, value, onValueChange }: { children: React.ReactNode; value: string; onValueChange: (value: string) => void }) => (
-  <div>{children}</div>
-);
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    AlertTriangle,
+    Bug,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    CloudRain,
+    DollarSign,
+    Droplets,
+    Leaf,
+    MapPin,
+    Sparkles,
+    Sprout,
+    Thermometer,
+    TrendingUp,
+    Wind,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 
-const TabsList = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={`flex space-x-1 ${className || ''}`}>{children}</div>
-);
+// Chart data
+const nutrientData = [
+    { name: 'Nitrogen', value: 120, optimal: 150 },
+    { name: 'Phosphorus', value: 21, optimal: 25 },
+    { name: 'Potassium', value: 169, optimal: 180 },
+];
 
-const TabsTrigger = ({ children, value, className }: { children: React.ReactNode; value: string; className?: string }) => (
-  <button className={`px-3 py-2 text-sm font-medium rounded-md ${className || ''}`}>
-    {children}
-  </button>
-);
+const riskDistribution = [
+    { name: 'Disease Risk', value: 15, color: 'hsl(var(--chart-4))' },
+    { name: 'Pest Risk', value: 12, color: 'hsl(var(--chart-5))' },
+    { name: 'Weather Risk', value: 8, color: 'hsl(var(--chart-3))' },
+    { name: 'Low Risk', value: 65, color: 'hsl(var(--chart-1))' },
+];
 
-const TabsContent = ({ children, value, className }: { children: React.ReactNode; value: string; className?: string }) => (
-  <div className={className || ''}>{children}</div>
-);
+const yieldTrend = [
+    { season: '2020', predicted: 5.2, average: 4.8 },
+    { season: '2021', predicted: 5.8, average: 5.1 },
+    { season: '2022', predicted: 6.1, average: 5.5 },
+    { season: '2023', predicted: 6.4, average: 5.9 },
+    { season: '2024', predicted: 6.7, average: 6.2 },
+];
 
-import { ArrowLeft, MapPin, TrendingUp, Droplets, Sun, Leaf, BarChart3, Calendar, Loader2, Sparkles, Brain, Zap, Thermometer, Wind, AlertTriangle, Bug, CloudRain, Sprout, Clock, CheckCircle2, DollarSign } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import axios from 'axios';
+const weatherImpact = [
+    { factor: 'Temperature', impact: 15 },
+    { factor: 'Rainfall', impact: 15 },
+    { factor: 'Humidity', impact: -3 },
+];
 
 interface PredictionData {
     field_id: number;
@@ -50,7 +92,6 @@ interface PredictionData {
     status?: 'pending' | 'processing' | 'completed' | 'failed';
     message?: string;
     created_at: string;
-    // Add missing fields that the UI expects
     days_to_harvest?: number;
     disease_risks?: string[];
     pest_risks?: string[];
@@ -61,11 +102,6 @@ interface PredictionData {
     harvest_recommendations?: string[];
     market_trends?: string[];
     overall_risk_score?: number;
-}
-
-interface PredictionPageProps {
-    fields?: PredictionData[];
-    submissionKey?: string;
 }
 
 interface SubmissionStatus {
@@ -80,638 +116,956 @@ interface SubmissionStatus {
     any_failed: boolean;
 }
 
- 
-// Chart data constants removed since we're using placeholder components
-
-export default function PredictionPage({ fields = [], submissionKey }: PredictionPageProps) {
-    const [predictions, setPredictions] = useState<PredictionData[]>(fields);
-    const [activeTab, setActiveTab] = useState("weather");
+export default function AgriSenseDashboard({
+    submissionKey,
+}: {
+    submissionKey: string;
+}) {
+    const [prediction, setPrediction] = useState<any>([]);
+    const [activeTab, setActiveTab] = useState('weather');
     const [loading, setLoading] = useState(false);
-    const [selectedField, setSelectedField] = useState<PredictionData | null>(null);
-    const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
+    const [selectedField, setSelectedField] = useState<PredictionData | null>(
+        null,
+    );
+    const [submissionStatus, setSubmissionStatus] =
+        useState<SubmissionStatus | null>(null);
     const [isPolling, setIsPolling] = useState(false);
-    const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+    const [pollingInterval, setPollingInterval] =
+        useState<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-      console.log('submissionStatus', submissionKey);
-      // if submition is complete don't poll
-      if (submissionKey && submissionStatus && submissionStatus?.status === 'completed') {
-          return;
-      }
+    useEffect(() => {
+        if (submissionKey) {
+            fetchLatestPrediction(submissionKey);
+        }
+    }, [submissionKey]);
 
-      // If we have a submission key, start polling for status
-      if (submissionKey) {
-          startPolling(submissionKey);
-      } else if (fields.length === 0) {
-          // If no fields passed as props, fetch from API
-          fetchLatestPredictions();
-      }
+    // useEffect(() => {
+    //   // If submission is complete, don't poll
+    //   if (submissionKey && submissionStatus?.status === "completed") {
+    //     return
+    //   }
 
-      // Cleanup polling on unmount
-      return () => {
-          if (pollingInterval) {
-              clearInterval(pollingInterval);
-          }
-      };
-  }, [submissionKey, fields.length]);
+    //   // If we have a submission key, start polling for status
+    //   if (submissionKey) {
+    //     startPolling(submissionKey)
+    //   }
 
-  const fetchLatestPredictions = async () => {
-      setLoading(true);
-      try {
-          const response = await axios.get('/api/predictions/latest');
-          setPredictions(response.data.predictions || []);
-      } catch (error) {
-          console.error('Failed to fetch predictions:', error);
-      } finally {
-          setLoading(false);
-      }
-  };
+    //   // Cleanup polling on unmount
+    //   return () => {
+    //     if (pollingInterval) {
+    //       clearInterval(pollingInterval)
+    //     }
+    //   }
+    // }, [submissionKey, predictions.length])
 
-  const startPolling = (submissionKey: string) => {
-      setIsPolling(true);
-      
-      // Initial fetch
-      checkSubmissionStatus(submissionKey);
-      
-      // Set up polling every 5 seconds
-      const interval = setInterval(() => {
-          checkSubmissionStatus(submissionKey);
-      }, 5000);
-      
-      setPollingInterval(interval);
-  };
+    const fetchLatestPrediction = async (submissionKey: string) => {
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/predictions/${submissionKey}`);
+            if (!response.ok) throw new Error('Failed to fetch predictions');
+            const data = await response.json();
 
-  const checkSubmissionStatus = async (submissionKey: string) => {
-      try {
-          const response = await axios.get(`/api/predictions/status/${submissionKey}`);
-          const data = response.data;
-          
-          if (data.success) {
-              setSubmissionStatus(data.submission);
-              setPredictions(data.predictions || []);
-              
-              // If all completed or any failed, stop polling
-              if (data.submission.all_completed || data.submission.any_failed) {
-                  setIsPolling(false);
-                  if (pollingInterval) {
-                      clearInterval(pollingInterval);
-                      setPollingInterval(null);
-                  }
-              }
-          }
-      } catch (error) {
-          console.error('Failed to check submission status:', error);
-      }
-  };
+            if (data.success) {
+                if (data.processing) {
+                    // Predictions are still processing
+                    setPrediction(null);
+                    setIsPolling(true);
+                    // Start polling for updates
+                    setTimeout(() => {
+                        fetchLatestPrediction(submissionKey);
+                    }, 5000);
+                } else {
+                    setPrediction(data.data);
+                    setIsPolling(false);
+                }
+            } else {
+                console.error('API Error:', data.message);
+                setPrediction(null);
+            }
+        } catch (error) {
+            console.error('Failed to fetch predictions:', error);
+            setPrediction(null);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleBackToMapping = () => {
-      router.visit('/field-mapping');
-  };
+    const startPolling = (submissionKey: string) => {
+        setIsPolling(true);
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-      <div className="space-y-6">
-          {/* AI Processing Header */}
-          <div className="text-center py-12">
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-blue-500/20">
-                  <Brain className="h-12 w-12 animate-pulse text-emerald-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">AI Agents at Work</h2>
-              <p className="text-slate-300 mb-4">Our AI is analyzing your fields and doing some magic...</p>
-              <div className="flex items-center justify-center gap-2 text-emerald-400">
-                  <Sparkles className="h-5 w-5 animate-pulse" />
-                  <span className="text-sm font-medium">Processing {submissionStatus?.total_fields || 0} fields</span>
-                  <Zap className="h-5 w-5 animate-pulse" />
-              </div>
-          </div>
+        // Initial fetch
+        checkSubmissionStatus(submissionKey);
 
-          {/* Progress indicators */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {predictions.map((prediction, index) => (
-                  <Card key={prediction.field_id} className="border-slate-700 bg-slate-800/90">
-                      <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                              <h3 className="font-medium text-white">{prediction.field_name}</h3>
-                              <div className="flex items-center gap-2">
-                                  {prediction.status === 'processing' && (
-                                      <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                                  )}
-                                  {prediction.status === 'pending' && (
-                                      <div className="h-4 w-4 rounded-full bg-yellow-400 animate-pulse" />
-                                  )}
-                                  {prediction.status === 'completed' && (
-                                      <div className="h-4 w-4 rounded-full bg-green-400" />
-                                  )}
-                              </div>
-                          </div>
-                          <div className="space-y-2">
-                              <div className="h-3 bg-slate-700 rounded animate-pulse"></div>
-                              <div className="h-3 bg-slate-700 rounded animate-pulse w-3/4"></div>
-                              <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2"></div>
-                          </div>
-                          {prediction.message && (
-                              <p className="text-sm text-slate-400 mt-3">{prediction.message}</p>
-                          )}
-                      </CardContent>
-                  </Card>
-              ))}
-          </div>
+        // Set up polling every 5 seconds
+        const interval = setInterval(() => {
+            checkSubmissionStatus(submissionKey);
+        }, 5000);
 
-          {/* Processing steps */}
-          <Card className="border-slate-700 bg-slate-800/90">
-              <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-emerald-400" />
-                      AI Processing Steps
-                  </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                              <span className="text-white text-sm">1</span>
-                          </div>
-                          <div>
-                              <p className="text-white font-medium">Field Analysis</p>
-                              <p className="text-slate-400 text-sm">Analyzing field coordinates and crop data</p>
-                          </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                              <span className="text-white text-sm">2</span>
-                          </div>
-                          <div>
-                              <p className="text-white font-medium">Weather Data Collection</p>
-                              <p className="text-slate-400 text-sm">Gathering current and forecasted weather</p>
-                          </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                              <Loader2 className="h-4 w-4 animate-spin text-white" />
-                          </div>
-                          <div>
-                              <p className="text-white font-medium">AI Prediction Analysis</p>
-                              <p className="text-slate-400 text-sm">Running advanced crop yield predictions</p>
-                          </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-slate-600 flex items-center justify-center">
-                              <span className="text-slate-400 text-sm">4</span>
-                          </div>
-                          <div>
-                              <p className="text-slate-400 font-medium">Risk Assessment</p>
-                              <p className="text-slate-500 text-sm">Evaluating potential risks and recommendations</p>
-                          </div>
-                      </div>
-                  </div>
-              </CardContent>
-          </Card>
-      </div>
-  );
+        setPollingInterval(interval);
+    };
 
-  // Show loading skeleton if polling or no predictions available
-  if (isPolling || (predictions.length === 0 && submissionKey)) {
-      return (
-          <div className="min-h-screen bg-slate-900">
-              <div className="container mx-auto px-4 py-8">
-                  <LoadingSkeleton />
-              </div>
-          </div>
-      );
-  }
+    const checkSubmissionStatus = async (submissionKey: string) => {
+        try {
+            const response = await fetch(
+                `/api/predictions/status/${submissionKey}`,
+            );
+            if (!response.ok) throw new Error('Failed to check status');
+            const data = await response.json();
 
-  // If no predictions and no submission key, show empty state
-  if (predictions.length === 0) {
-      return (
-          <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-              <Card className="border-slate-700 bg-slate-800/90">
-                  <CardContent className="p-8 text-center">
-                      <h2 className="text-xl font-bold text-white mb-4">No Predictions Available</h2>
-                      <p className="text-slate-300 mb-6">No field predictions found. Please submit some fields first.</p>
-                      <Button onClick={handleBackToMapping} className="bg-emerald-600 hover:bg-emerald-700">
-                          <ArrowLeft className="mr-2 h-4 w-4" />
-                          Back to Field Mapping
-                      </Button>
-                  </CardContent>
-              </Card>
-          </div>
-      );
-  }
+            if (data.success) {
+                setSubmissionStatus(data.submission);
+                setPrediction(data.data || []);
 
-  // Use the first prediction for display (in a real app, you'd have field selection)
-  const prediction = predictions[0];
-  
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-balance flex items-center gap-2">
-                <Sprout className="h-6 w-6 text-primary" />
-                AgriSense Crop Intelligence
-              </h1>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" />
-                  {submissionStatus?.region || prediction.region} — {submissionStatus?.zone || 'Unknown Zone'}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" />
-                  {new Date(prediction.created_at).toLocaleString()}
-                </span>
-              </div>
-            </div>
-            <Badge variant="secondary" className="self-start md:self-center">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI Model v1.0.0
-            </Badge>
-          </div>
-        </div>
-      </header>
+                // If all completed or any failed, stop polling
+                if (
+                    data.submission.all_completed ||
+                    data.submission.any_failed
+                ) {
+                    setIsPolling(false);
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        setPollingInterval(null);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check submission status:', error);
+        }
+    };
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Overview Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Predicted Yield
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">
-                {prediction.predicted_yield} tons/ha
-              </div>
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Confidence</span>
-                  <span className="font-medium">{prediction.yield_confidence}%</span>
-                </div>
-                <Progress value={prediction.yield_confidence} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
+    const handleBackToMapping = () => {
+        window.location.href = '/field-mapping';
+    };
 
-          <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Days to Harvest
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-secondary">{prediction.days_to_harvest || 90}</div>
-              <p className="text-xs text-muted-foreground mt-2">{prediction.growth_stage}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-chart-1/20 bg-gradient-to-br from-chart-1/5 to-transparent">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Prediction Accuracy
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <div className="text-3xl font-bold text-chart-1">95%</div>
-                <Badge variant="outline" className="border-chart-1 text-chart-1">
-                  Excellent
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-chart-2/20 bg-gradient-to-br from-chart-2/5 to-transparent">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Market Price
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-chart-2">
-                ${350}
-              </div>
-              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 text-chart-1" />
-                <span>Stable outlook</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Weather & Soil Panel */}
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
-          {/* Weather Widget */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CloudRain className="h-5 w-5 text-primary" />
-                Weather Conditions
-              </CardTitle>
-              <CardDescription>{prediction.weather_impact || 'Favorable weather conditions'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                  <Thermometer className="h-8 w-8 text-chart-4 mb-2" />
-                  <div className="text-2xl font-bold">+12%</div>
-                  <div className="text-xs text-muted-foreground">Temperature</div>
-                </div>
-                <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                  <Droplets className="h-8 w-8 text-chart-3 mb-2" />
-                  <div className="text-2xl font-bold">+8%</div>
-                  <div className="text-xs text-muted-foreground">Rainfall</div>
-                </div>
-                <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                  <Wind className="h-8 w-8 text-chart-5 mb-2" />
-                  <div className="text-2xl font-bold">5%</div>
-                  <div className="text-xs text-muted-foreground">Humidity</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Soil Panel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Leaf className="h-5 w-5 text-primary" />
-                Soil Health
-              </CardTitle>
-              <CardDescription>{prediction.soil_conditions || 'Good soil structure'}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">pH Level</div>
-                  <div className="text-xl font-bold">6.8</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Organic Matter</div>
-                  <div className="text-xl font-bold">3.2%</div>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Nitrogen (N)</span>
-                    <span className="font-medium">120 ppm</span>
-                  </div>
-                  <Progress value={80} className="h-1.5" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Phosphorus (P)</span>
-                    <span className="font-medium">25 ppm</span>
-                  </div>
-                  <Progress value={84} className="h-1.5" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Potassium (K)</span>
-                    <span className="font-medium">180 ppm</span>
-                  </div>
-                  <Progress value={94} className="h-1.5" />
-                </div>
-              </div>
-              <div className="pt-2">
-                <Badge variant="outline">Well-drained loam</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* AI Insights Tabs */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              AI Insights & Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
-                <TabsTrigger value="weather">Weather Impact</TabsTrigger>
-                <TabsTrigger value="fertilizer">Fertilizer Plan</TabsTrigger>
-                <TabsTrigger value="irrigation">Irrigation</TabsTrigger>
-                <TabsTrigger value="risks">Risks</TabsTrigger>
-                <TabsTrigger value="market">Market Outlook</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="weather" className="space-y-4 mt-6">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Favorable Conditions</h4>
-                    <p className="text-sm text-muted-foreground">{prediction.weather_impact || 'Favorable weather conditions'}</p>
-                  </div>
-                </div>
-                <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Weather Impact Chart</p>
-                    <p className="text-xs text-muted-foreground">Temperature: +12%, Rainfall: +8%, Humidity: 5%</p>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="fertilizer" className="space-y-4 mt-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 rounded-lg border bg-card">
-                    <div className="text-xs text-muted-foreground mb-1">Type</div>
-                    <div className="font-semibold">Nitrogen-based</div>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-card">
-                    <div className="text-xs text-muted-foreground mb-1">Dosage</div>
-                    <div className="font-semibold">
-                      150 kg/ha
+    // Enhanced loading skeleton component
+    const LoadingSkeleton = () => (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
+            <header className="sticky top-0 z-50 border-b border-white/20 bg-white/80 backdrop-blur-xl shadow-lg">
+                <div className="container mx-auto px-4 py-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h1 className="flex items-center gap-2 text-2xl font-bold text-balance bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                                <Sprout className="h-6 w-6 text-green-600 animate-pulse" />
+                                AgriSense Crop Intelligence
+                            </h1>
+                            <div className="mt-2 flex items-center gap-4 text-sm text-slate-600">
+                                <span className="flex items-center gap-1.5">
+                                    <MapPin className="h-4 w-4 animate-bounce" />
+                                    Processing...
+                                </span>
+                            </div>
+                        </div>
+                        <Badge
+                            variant="secondary"
+                            className="self-start md:self-center bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg animate-pulse"
+                        >
+                            <Sparkles className="mr-1 h-3 w-3 animate-spin" />
+                            AI Processing
+                        </Badge>
                     </div>
-                  </div>
                 </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <div className="text-xs text-muted-foreground mb-2">Application Method</div>
-                  <p className="text-sm">Broadcast application</p>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <div className="text-xs text-muted-foreground mb-2">Timing</div>
-                  <p className="text-sm">Apply in 2 weeks</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="irrigation" className="space-y-4 mt-6">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-chart-3/5 border border-chart-3/20">
-                  <Droplets className="h-5 w-5 text-chart-3 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold mb-1">
-                      Irrigation Required
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Maintain consistent soil moisture
+            </header>
+            <main className="container mx-auto px-4 py-8">
+                <div className="py-16 text-center">
+                    <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full border-4 border-green-200 bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 shadow-2xl animate-pulse">
+                        <Sparkles className="h-16 w-16 text-white animate-spin" />
+                    </div>
+                    <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        AI Agents at Work
+                    </h2>
+                    <p className="mb-6 text-lg text-slate-600 max-w-md mx-auto">
+                        Our AI is analyzing your fields and generating
+                        predictions...
                     </p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <div className="text-xs text-muted-foreground mb-2">Recommendation</div>
-                  <p className="text-sm">Drip irrigation system</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="risks" className="space-y-4 mt-6">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <h4 className="font-semibold text-sm">Disease Risks</h4>
+                    <div className="flex items-center justify-center gap-3 text-green-600">
+                        <Sparkles className="h-6 w-6 animate-bounce" />
+                        <span className="text-lg font-medium">
+                            Processing your field data
+                        </span>
+                        <Sparkles className="h-6 w-6 animate-bounce" />
                     </div>
-                    <div className="space-y-2">
-                      {(prediction.disease_risks || ['Fungal infections']).map((risk, i) => (
-                        <Badge key={i} variant="destructive" className="mr-2">
-                          {risk}
-                        </Badge>
-                      ))}
+                    <div className="mt-8 flex justify-center">
+                        <div className="flex space-x-2">
+                            <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce"></div>
+                            <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
                     </div>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Bug className="h-4 w-4 text-chart-4" />
-                      <h4 className="font-semibold text-sm">Pest Risks</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {(prediction.pest_risks || ['Aphids']).map((risk, i) => (
-                        <Badge key={i} variant="outline" className="mr-2 border-chart-4 text-chart-4">
-                          {risk}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CloudRain className="h-4 w-4 text-chart-3" />
-                      <h4 className="font-semibold text-sm">Weather Risks</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {(prediction.weather_risks || ['Potential drought']).map((risk, i) => (
-                        <Badge key={i} variant="outline" className="mr-2 border-chart-3 text-chart-3">
-                          {risk}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <div className="text-xs text-muted-foreground mb-2">Overall Risk Score</div>
-                  <div className="flex items-center gap-3">
-                    <Progress value={prediction.overall_risk_score || 25} className="h-2" />
-                    <span className="font-semibold">{prediction.overall_risk_score || 25}%</span>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="market" className="space-y-4 mt-6">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-secondary/5 border border-secondary/20">
-                  <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Market Outlook</h4>
-                    <p className="text-sm text-muted-foreground">{prediction.market_outlook}</p>
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {(prediction.market_trends || ['Increasing demand']).map((trend, i) => (
-                    <div key={i} className="p-4 rounded-lg border bg-card">
-                      <CheckCircle2 className="h-4 w-4 text-primary mb-2" />
-                      <div className="text-sm font-medium">{trend}</div>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Charts Section */}
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
-          {/* Nutrient Levels Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Nutrient Levels (NPK)</CardTitle>
-              <CardDescription>Current vs. Optimal levels</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Nutrient Levels Chart</p>
-                  <p className="text-xs text-muted-foreground">N: 120ppm, P: 25ppm, K: 180ppm</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Risk Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Risk Distribution</CardTitle>
-              <CardDescription>Overall risk assessment breakdown</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <div className="h-12 w-12 bg-muted-foreground rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <span className="text-white text-lg">📊</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Risk Distribution</p>
-                  <p className="text-xs text-muted-foreground">Disease: 15%, Pest: 12%, Weather: 8%, Low: 65%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Yield Trend */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Yield Trend Analysis</CardTitle>
-              <CardDescription>Predicted vs. average yield over past 5 seasons</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Yield Trend Analysis</p>
-                  <p className="text-xs text-muted-foreground">2024 Predicted: 6.7 tons/ha vs Average: 6.2 tons/ha</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </main>
         </div>
+    );
 
-        {/* Footer / Metadata */}
-        <Card className="bg-muted/30">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                <span>Generated by AgriSense AI v1.0.0</span>
-              </div>
-              <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-                <span>
-                  Created: {new Date(prediction.created_at).toLocaleTimeString()}
-                </span>
-                <span className="hidden md:inline">•</span>
-                <span>
-                  Status: {prediction.status || 'completed'}
-                </span>
-              </div>
+    // Show loading if no prediction data and still loading/polling
+    if (loading || (isPolling && !prediction)) {
+        return <LoadingSkeleton />;
+    }
+
+    // Show error state if no prediction data
+    if (!prediction) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background">
+                <Card className="border-destructive/20 bg-destructive/5">
+                    <CardContent className="p-8 text-center">
+                        <h2 className="mb-4 text-xl font-bold text-destructive">
+                            No Predictions Available
+                        </h2>
+                        <p className="mb-6 text-muted-foreground">
+                            No field predictions found for this submission.
+                        </p>
+                        <Button
+                            onClick={handleBackToMapping}
+                            className="bg-primary hover:bg-primary/90"
+                        >
+                            <MapPin className="mr-2 h-4 w-4" />
+                            Back to Field Mapping
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  )
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
+            {/* Header */}
+            <header className="sticky top-0 z-50 border-b border-white/20 bg-white/80 backdrop-blur-xl shadow-lg">
+                <div className="container mx-auto px-4 py-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h1 className="flex items-center gap-2 text-2xl font-bold text-balance bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                                <Sprout className="h-6 w-6 text-green-600 animate-pulse" />
+                                AgriSense Crop Intelligence
+                            </h1>
+                            <div className="mt-2 flex items-center gap-4 text-sm text-slate-600">
+                                <span className="flex items-center gap-1.5">
+                                    <MapPin className="h-4 w-4 text-green-600" />
+                                    {prediction?.region} — {prediction?.zone}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Calendar className="h-4 w-4 text-blue-600" />
+                                    {prediction?.processing_completed_at
+                                        ? new Date(
+                                              prediction.processing_completed_at,
+                                          ).toLocaleString()
+                                        : new Date().toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                        <Badge
+                            variant="secondary"
+                            className="self-start md:self-center bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                            <Sparkles className="mr-1 h-3 w-3" />
+                            AI Model v
+                            {prediction?.ai_metadata?.model_version || '1.0.0'}
+                        </Badge>
+                    </div>
+                </div>
+            </header>
+
+            <main className="container mx-auto px-4 py-8">
+                {/* Overview Cards */}
+                <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <Card className="group border-0 bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="pb-3">
+                            <CardDescription className="flex items-center gap-2 text-green-100">
+                                <TrendingUp className="h-4 w-4" />
+                                Predicted Yield
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">
+                                {prediction?.predicted_yield}{' '}
+                                {prediction?.yield_unit}
+                            </div>
+                            <div className="mt-3">
+                                <div className="mb-1 flex items-center justify-between text-xs text-green-100">
+                                    <span>Confidence</span>
+                                    <span className="font-medium">
+                                        {prediction?.yield_confidence}%
+                                    </span>
+                                </div>
+                                <Progress
+                                    value={prediction?.yield_confidence}
+                                    className="h-2 bg-green-200"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="group border-0 bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="pb-3">
+                            <CardDescription className="flex items-center gap-2 text-blue-100">
+                                <Clock className="h-4 w-4" />
+                                Days to Harvest
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">
+                                {prediction?.days_to_harvest}
+                            </div>
+                            <p className="mt-2 text-xs text-blue-100">
+                                {prediction?.growth_stage}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="group border-0 bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="pb-3">
+                            <CardDescription className="flex items-center gap-2 text-purple-100">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Prediction Accuracy
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-2">
+                                <div className="text-3xl font-bold text-white">
+                                    {prediction?.prediction_accuracy || '95'}%
+                                </div>
+                                <Badge
+                                    variant="outline"
+                                    className="border-purple-200 text-purple-100 bg-purple-500/20"
+                                >
+                                    Excellent
+                                </Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="group border-0 bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="pb-3">
+                            <CardDescription className="flex items-center gap-2 text-orange-100">
+                                <DollarSign className="h-4 w-4" />
+                                Market Price
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">
+                                ${prediction?.market_price_prediction}
+                            </div>
+                            <div className="mt-2 flex items-center gap-1 text-xs text-orange-100">
+                                <TrendingUp className="h-3 w-3" />
+                                <span>Stable outlook</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Weather & Soil Panel */}
+                <div className="mb-8 grid gap-6 lg:grid-cols-2">
+                    {/* Weather Widget */}
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-cyan-50 hover:shadow-2xl transition-all duration-300">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-blue-700">
+                                <CloudRain className="h-5 w-5 text-blue-600" />
+                                Weather Conditions
+                            </CardTitle>
+                            <CardDescription className="text-blue-600">
+                                {prediction?.weather_impact_summary}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-orange-100 to-red-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                    <Thermometer className="mb-2 h-8 w-8 text-orange-600 group-hover:animate-pulse" />
+                                    <div className="text-2xl font-bold text-orange-700">
+                                        +
+                                        {prediction?.temperature_impact || '15'}
+                                        %
+                                    </div>
+                                    <div className="text-xs text-orange-600 font-medium">
+                                        Temperature
+                                    </div>
+                                </div>
+                                <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                    <Droplets className="mb-2 h-8 w-8 text-blue-600 group-hover:animate-pulse" />
+                                    <div className="text-2xl font-bold text-blue-700">
+                                        +{prediction?.rainfall_impact || '15'}%
+                                    </div>
+                                    <div className="text-xs text-blue-600 font-medium">
+                                        Rainfall
+                                    </div>
+                                </div>
+                                <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                    <Wind className="mb-2 h-8 w-8 text-green-600 group-hover:animate-pulse" />
+                                    <div className="text-2xl font-bold text-green-700">
+                                        {prediction?.humidity_impact || '-3'}%
+                                    </div>
+                                    <div className="text-xs text-green-600 font-medium">
+                                        Humidity
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Soil Panel */}
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-2xl transition-all duration-300">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-green-700">
+                                <Leaf className="h-5 w-5 text-green-600" />
+                                Soil Health
+                            </CardTitle>
+                            <CardDescription className="text-green-600">
+                                {prediction?.soil_conditions}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="group rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 p-3 hover:shadow-md transition-all duration-300">
+                                    <div className="mb-1 text-xs text-blue-600 font-medium">
+                                        pH Level
+                                    </div>
+                                    <div className="text-xl font-bold text-blue-700">
+                                        {prediction?.soil_ph || '6.8'}
+                                    </div>
+                                </div>
+                                <div className="group rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 p-3 hover:shadow-md transition-all duration-300">
+                                    <div className="mb-1 text-xs text-green-600 font-medium">
+                                        Organic Matter
+                                    </div>
+                                    <div className="text-xl font-bold text-green-700">
+                                        {prediction?.organic_matter_percent ||
+                                            '3.2'}
+                                        %
+                                    </div>
+                                </div>
+                            </div>
+                            <Separator className="bg-green-200" />
+                            <div className="space-y-4">
+                                <div className="group rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 p-3 hover:shadow-md transition-all duration-300">
+                                    <div className="mb-2 flex justify-between text-xs">
+                                        <span className="text-purple-600 font-medium">
+                                            Nitrogen (N)
+                                        </span>
+                                        <span className="font-bold text-purple-700">
+                                            {prediction?.nitrogen_level ||
+                                                '120'}{' '}
+                                            ppm
+                                        </span>
+                                    </div>
+                                    <Progress value={80} className="h-2 bg-purple-100" />
+                                </div>
+                                <div className="group rounded-lg bg-gradient-to-r from-orange-50 to-red-50 p-3 hover:shadow-md transition-all duration-300">
+                                    <div className="mb-2 flex justify-between text-xs">
+                                        <span className="text-orange-600 font-medium">
+                                            Phosphorus (P)
+                                        </span>
+                                        <span className="font-bold text-orange-700">
+                                            {prediction?.phosphorus_level ||
+                                                '25'}{' '}
+                                            ppm
+                                        </span>
+                                    </div>
+                                    <Progress value={84} className="h-2 bg-orange-100" />
+                                </div>
+                                <div className="group rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 p-3 hover:shadow-md transition-all duration-300">
+                                    <div className="mb-2 flex justify-between text-xs">
+                                        <span className="text-green-600 font-medium">
+                                            Potassium (K)
+                                        </span>
+                                        <span className="font-bold text-green-700">
+                                            {prediction?.potassium_level ||
+                                                '180'}{' '}
+                                            ppm
+                                        </span>
+                                    </div>
+                                    <Progress value={94} className="h-2 bg-green-100" />
+                                </div>
+                            </div>
+                            <div className="pt-2">
+                                <Badge variant="outline" className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 hover:shadow-md transition-all duration-300">
+                                    {prediction?.soil_type ||
+                                        'Well-drained loam'}
+                                </Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* AI Insights Tabs */}
+                <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-white to-slate-50 hover:shadow-2xl transition-all duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-slate-700">
+                            <Sparkles className="h-5 w-5 text-purple-600 animate-pulse" />
+                            AI Insights & Recommendations
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Tabs value={activeTab} onValueChange={setActiveTab}>
+                            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 bg-gradient-to-r from-slate-100 to-slate-200 p-1 rounded-xl">
+                                <TabsTrigger value="weather" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg transition-all duration-300">
+                                    Weather Impact
+                                </TabsTrigger>
+                                <TabsTrigger value="fertilizer" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-lg transition-all duration-300">
+                                    Fertilizer Plan
+                                </TabsTrigger>
+                                <TabsTrigger value="irrigation" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white rounded-lg transition-all duration-300">
+                                    Irrigation
+                                </TabsTrigger>
+                                <TabsTrigger value="risks" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-lg transition-all duration-300">
+                                    Risks
+                                </TabsTrigger>
+                                <TabsTrigger value="market" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white rounded-lg transition-all duration-300">
+                                    Market Outlook
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent
+                                value="weather"
+                                className="mt-6 space-y-4"
+                            >
+                                <div className="flex items-start gap-3 rounded-xl border-0 bg-gradient-to-r from-blue-100 to-cyan-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-blue-600 animate-pulse" />
+                                    <div>
+                                        <h4 className="mb-2 font-bold text-blue-800">
+                                            Favorable Conditions
+                                        </h4>
+                                        <p className="text-sm text-blue-700">
+                                            {prediction?.weather_impact_summary}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="h-64">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <BarChart data={weatherImpact}>
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                stroke="hsl(var(--border))"
+                                            />
+                                            <XAxis
+                                                dataKey="factor"
+                                                stroke="hsl(var(--muted-foreground))"
+                                            />
+                                            <YAxis stroke="hsl(var(--muted-foreground))" />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor:
+                                                        'hsl(var(--card))',
+                                                    border: '1px solid hsl(var(--border))',
+                                                    borderRadius:
+                                                        'var(--radius)',
+                                                }}
+                                            />
+                                            <Bar
+                                                dataKey="impact"
+                                                fill="hsl(var(--primary))"
+                                                radius={[8, 8, 0, 0]}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent
+                                value="fertilizer"
+                                className="mt-6 space-y-4"
+                            >
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="rounded-lg border bg-card p-4">
+                                        <div className="mb-1 text-xs text-muted-foreground">
+                                            Type
+                                        </div>
+                                        <div className="font-semibold">
+                                            {
+                                                prediction
+                                                    ?.fertilizer_recommendations
+                                                    ?.type
+                                            }
+                                        </div>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-4">
+                                        <div className="mb-1 text-xs text-muted-foreground">
+                                            Dosage
+                                        </div>
+                                        <div className="font-semibold">
+                                            {
+                                                prediction
+                                                    ?.fertilizer_recommendations
+                                                    ?.dosage_kg_ha
+                                            }{' '}
+                                            kg/ha
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="rounded-lg border bg-card p-4">
+                                    <div className="mb-2 text-xs text-muted-foreground">
+                                        Application Method
+                                    </div>
+                                    <p className="text-sm">
+                                        {
+                                            prediction
+                                                ?.fertilizer_recommendations
+                                                ?.application_method
+                                        }
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border bg-card p-4">
+                                    <div className="mb-2 text-xs text-muted-foreground">
+                                        Timing
+                                    </div>
+                                    <p className="text-sm">
+                                        {
+                                            prediction
+                                                ?.fertilizer_recommendations
+                                                ?.timing
+                                        }
+                                    </p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent
+                                value="irrigation"
+                                className="mt-6 space-y-4"
+                            >
+                                <div className="flex items-start gap-3 rounded-lg border border-chart-3/20 bg-chart-3/5 p-4">
+                                    <Droplets className="mt-0.5 h-5 w-5 text-chart-3" />
+                                    <div>
+                                        <h4 className="mb-1 font-semibold">
+                                            {prediction
+                                                ?.irrigation_recommendations
+                                                ?.needed
+                                                ? 'Irrigation Required'
+                                                : 'No Irrigation Needed'}
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            {
+                                                prediction
+                                                    ?.irrigation_recommendations
+                                                    ?.timing
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="rounded-lg border bg-card p-4">
+                                    <div className="mb-2 text-xs text-muted-foreground">
+                                        Recommendation
+                                    </div>
+                                    <p className="text-sm">
+                                        {
+                                            prediction
+                                                ?.irrigation_recommendations
+                                                ?.method
+                                        }
+                                    </p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent
+                                value="risks"
+                                className="mt-6 space-y-4"
+                            >
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    <div className="rounded-lg border bg-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                                            <h4 className="text-sm font-semibold">
+                                                Disease Risks
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {prediction?.disease_risks?.map(
+                                                (risk: any, i: number) => (
+                                                    <Badge
+                                                        key={i}
+                                                        variant="destructive"
+                                                        className="mr-2"
+                                                    >
+                                                        {risk}
+                                                    </Badge>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <Bug className="h-4 w-4 text-chart-4" />
+                                            <h4 className="text-sm font-semibold">
+                                                Pest Risks
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {prediction?.pest_risks?.map(
+                                                (risk: any, i: number) => (
+                                                    <Badge
+                                                        key={i}
+                                                        variant="outline"
+                                                        className="mr-2 border-chart-4 text-chart-4"
+                                                    >
+                                                        {risk}
+                                                    </Badge>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <CloudRain className="h-4 w-4 text-chart-3" />
+                                            <h4 className="text-sm font-semibold">
+                                                Weather Risks
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-2">
+                                              {prediction?.weather_risks?.map(
+                                                (risk: any, i: number) => (
+                                                    <Badge
+                                                        key={i}
+                                                        variant="outline"
+                                                        className="mr-2 border-chart-3 text-chart-3"
+                                                    >
+                                                        {risk}
+                                                    </Badge>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="rounded-lg border bg-card p-4">
+                                    <div className="mb-2 text-xs text-muted-foreground">
+                                        Overall Risk Score
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Progress
+                                            value={Number.parseFloat(
+                                                prediction?.overall_risk_score ||
+                                                    '0',
+                                            )}
+                                            className="h-2"
+                                        />
+                                        <span className="font-semibold">
+                                            {prediction?.overall_risk_score}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent
+                                value="market"
+                                className="mt-6 space-y-4"
+                            >
+                                <div className="flex items-start gap-3 rounded-lg border border-secondary/20 bg-secondary/5 p-4">
+                                    <TrendingUp className="mt-0.5 h-5 w-5 text-secondary" />
+                                    <div>
+                                        <h4 className="mb-1 font-semibold">
+                                            Market Outlook
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            {prediction?.market_outlook ??
+                                                'No market outlook available'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {prediction?.market_trends?.map(
+                                        (trend: any, i: number) => (
+                                            <div
+                                                key={i}
+                                                className="rounded-lg border bg-card p-4"
+                                            >
+                                                <CheckCircle2 className="mb-2 h-4 w-4 text-primary" />
+                                                <div className="text-sm font-medium">
+                                                    {trend}
+                                                </div>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+
+                {/* Charts Section */}
+                <div className="mb-8 grid gap-6 lg:grid-cols-2">
+                    {/* Nutrient Levels Chart */}
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-2xl transition-all duration-300">
+                        <CardHeader>
+                            <CardTitle className="text-purple-700">Nutrient Levels (NPK)</CardTitle>
+                            <CardDescription className="text-purple-600">
+                                Current vs. Optimal levels
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={nutrientData}>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="#e2e8f0"
+                                        />
+                                        <XAxis
+                                            dataKey="name"
+                                            stroke="#64748b"
+                                        />
+                                        <YAxis stroke="#64748b" />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '12px',
+                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                            }}
+                                        />
+                                        <Legend />
+                                        <Bar
+                                            dataKey="value"
+                                            fill="#8b5cf6"
+                                            name="Current"
+                                            radius={[8, 8, 0, 0]}
+                                        />
+                                        <Bar
+                                            dataKey="optimal"
+                                            fill="#ec4899"
+                                            name="Optimal"
+                                            radius={[8, 8, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Risk Distribution */}
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-red-50 to-orange-50 hover:shadow-2xl transition-all duration-300">
+                        <CardHeader>
+                            <CardTitle className="text-red-700">Risk Distribution</CardTitle>
+                            <CardDescription className="text-red-600">
+                                Overall risk assessment breakdown
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={riskDistribution}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={({ name, percent }) =>
+                                                `${name}: ${(percent * 100).toFixed(0)}%`
+                                            }
+                                            outerRadius={100}
+                                            fill="#ef4444"
+                                            dataKey="value"
+                                        >
+                                            {riskDistribution.map(
+                                                (entry, index) => (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.color}
+                                                    />
+                                                ),
+                                            )}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '12px',
+                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Yield Trend */}
+                    <Card className="lg:col-span-2 border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-2xl transition-all duration-300">
+                        <CardHeader>
+                            <CardTitle className="text-green-700">Yield Trend Analysis</CardTitle>
+                            <CardDescription className="text-green-600">
+                                Predicted vs. average yield over past 5 seasons
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={yieldTrend}>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="#e2e8f0"
+                                        />
+                                        <XAxis
+                                            dataKey="season"
+                                            stroke="#64748b"
+                                        />
+                                        <YAxis stroke="#64748b" />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '12px',
+                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                            }}
+                                        />
+                                        <Legend />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="predicted"
+                                            stroke="#10b981"
+                                            strokeWidth={4}
+                                            name="Predicted Yield"
+                                            dot={{ r: 6, fill: '#10b981' }}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="average"
+                                            stroke="#f59e0b"
+                                            strokeWidth={4}
+                                            name="Average Yield"
+                                            dot={{ r: 6, fill: '#f59e0b' }}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Footer / Metadata */}
+                <Card className="border-0 shadow-xl bg-gradient-to-r from-slate-100 to-slate-200 hover:shadow-2xl transition-all duration-300">
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col gap-4 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-purple-600 animate-pulse" />
+                                <span className="font-medium">
+                                    Generated by AgriSense AI v
+                                    {prediction?.ai_metadata?.model_version ||
+                                        '1.0.0'}
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-2 md:flex-row md:gap-4">
+                                <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 text-blue-600" />
+                                    Processing started:{' '}
+                                    {prediction?.processing_started_at
+                                        ? new Date(
+                                              prediction.processing_started_at,
+                                          ).toLocaleTimeString()
+                                        : 'N/A'}
+                                </span>
+                                <span className="hidden md:inline text-slate-400">•</span>
+                                <span className="flex items-center gap-1">
+                                    <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                    Completed:{' '}
+                                    {prediction?.processing_completed_at
+                                        ? new Date(
+                                              prediction.processing_completed_at,
+                                          ).toLocaleTimeString()
+                                        : 'N/A'}
+                                </span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    );
 }

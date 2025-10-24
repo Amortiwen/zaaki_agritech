@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Services\UtilitiesService;
 
+Route::get('/',  fn() => redirect()->route('home'));
+
 Route::get('/select-field', function () {
     return Inertia::render('select-field');
 })->name('home');
@@ -21,5 +23,6 @@ Route::get('/prediction/{submissionKey?}', [MainController::class, 'showPredicti
 Route::get('/current-weather', [UtilitiesService::class, 'getCurrentWeather'])->name('current-weather');
 Route::get('/predict-crop-yield', [MainController::class, 'predictCropYield'])->name('predict-crop-yield');
 Route::post('/fields', [MainController::class, 'storeFields'])->name('fields.store');
-Route::get('/api/predictions/latest', [MainController::class, 'getLatestPredictions'])->name('predictions.latest');
+Route::get('/api/predictions/{submissionKey}', [MainController::class, 'getLatestPrediction'])->name('predictions.latest');
+// Route::get('/api/predictions/latest', [MainController::class, 'getLatestPredictions'])->name('predictions.latest');
 Route::get('/api/predictions/status/{submissionKey}', [MainController::class, 'checkPredictionStatus'])->name('predictions.status');
