@@ -45,6 +45,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import { AIChatbot } from '@/components/ai-chatbot';
 
 // Chart data
 const nutrientData = [
@@ -1066,6 +1067,9 @@ export default function AgriSenseDashboard({
                     </CardContent>
                 </Card>
             </main>
+            
+            {/* AI Chatbot */}
+            <AIChatbot predictionData={prediction} />
         </div>
     );
 }
