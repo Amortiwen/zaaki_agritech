@@ -1,0 +1,99 @@
+{
+  "_button-DAvywSak.js": {
+    "file": "assets/button-DAvywSak.js",
+    "name": "button",
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "_index-Z71crN0z.js": {
+    "file": "assets/index-Z71crN0z.js",
+    "name": "index",
+    "imports": [
+      "resources/js/app.tsx",
+      "_button-DAvywSak.js"
+    ]
+  },
+  "_input-DeZ2wcjw.js": {
+    "file": "assets/input-DeZ2wcjw.js",
+    "name": "input",
+    "imports": [
+      "resources/js/app.tsx",
+      "_button-DAvywSak.js"
+    ]
+  },
+  "_leaf-l_I1Hx5f.js": {
+    "file": "assets/leaf-l_I1Hx5f.js",
+    "name": "leaf",
+    "imports": [
+      "_button-DAvywSak.js"
+    ]
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-BNnVs5U-.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.tsx": {
+    "file": "assets/app-DNO51zag.js",
+    "name": "app",
+    "src": "resources/js/app.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/pages/field-mapping.tsx",
+      "resources/js/pages/prediction.tsx",
+      "resources/js/pages/select-field.tsx"
+    ],
+    "css": [
+      "assets/app-BNnVs5U-.css"
+    ]
+  },
+  "resources/js/pages/field-mapping.tsx": {
+    "file": "assets/field-mapping-CzV0oIAe.js",
+    "name": "field-mapping",
+    "src": "resources/js/pages/field-mapping.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_index-Z71crN0z.js",
+      "_button-DAvywSak.js",
+      "_input-DeZ2wcjw.js"
+    ],
+    "css": [
+      "assets/app-BNnVs5U-.css"
+    ]
+  },
+  "resources/js/pages/prediction.tsx": {
+    "file": "assets/prediction-Cn4whIMh.js",
+    "name": "prediction",
+    "src": "resources/js/pages/prediction.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_index-Z71crN0z.js",
+      "_button-DAvywSak.js",
+      "_leaf-l_I1Hx5f.js"
+    ],
+    "css": [
+      "assets/app-BNnVs5U-.css"
+    ]
+  },
+  "resources/js/pages/select-field.tsx": {
+    "file": "assets/select-field-BYDfxdsr.js",
+    "name": "select-field",
+    "src": "resources/js/pages/select-field.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_button-DAvywSak.js",
+      "_input-DeZ2wcjw.js",
+      "_leaf-l_I1Hx5f.js"
+    ],
+    "css": [
+      "assets/app-BNnVs5U-.css"
+    ]
+  }
+}

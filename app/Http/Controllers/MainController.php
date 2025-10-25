@@ -32,24 +32,43 @@ class MainController extends Controller
      */
     public function storeFields(Request $request)
     {
+        // return $request->all();
         try {
-            // Validate the incoming request
-            $validator = Validator::make($request->all(), [
-                'fields' => 'required|array|min:1',
+            // Decode JSON data from FormData before validation
+            $data = $request->all();
+            
+            // Decode user_location if it's a JSON string
+            if (isset($data['user_location']) && is_string($data['user_location'])) {
+                $data['user_location'] = json_decode($data['user_location'], true);
+            }
+            
+            // Decode fields data if they're JSON strings
+            if (isset($data['fields']) && is_array($data['fields'])) {
+                foreach ($data['fields'] as $index => $field) {
+                    if (isset($field['coordinates']) && is_string($field['coordinates'])) {
+                        $data['fields'][$index]['coordinates'] = json_decode($field['coordinates'], true);
+                    }
+                    if (isset($field['center']) && is_string($field['center'])) {
+                        $data['fields'][$index]['center'] = json_decode($field['center'], true);
+                    }
+                }
+            }
+
+            // Simplified validation for better performance
+            $validator = Validator::make($data, [
+                'fields' => 'required|array|min:1|max:20', // Limit to 20 fields max
                 'fields.*.name' => 'required|string|max:255',
-                'fields.*.coordinates' => 'required|array|min:3',
-                'fields.*.coordinates.*' => 'required|array|size:2',
-                'fields.*.coordinates.*.*' => 'required|numeric',
+                'fields.*.coordinates' => 'required|array|min:3|max:100', // Limit coordinates
                 'fields.*.center' => 'required|array|size:2',
-                'fields.*.center.*' => 'required|numeric',
+                'fields.*.center.*' => 'required|numeric|between:-90,90', // Valid lat/lng range
                 'fields.*.region' => 'required|string|max:255',
                 'fields.*.country' => 'required|string|max:255',
                 'fields.*.crop' => 'nullable|string|max:255',
                 'fields.*.variety' => 'nullable|string|max:255',
-                'fields.*.image' => 'nullable|string',
+                'fields.*.image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max file size
                 'user_location' => 'nullable|array',
-                'user_location.lat' => 'nullable|numeric',
-                'user_location.lng' => 'nullable|numeric',
+                'user_location.lat' => 'nullable|numeric|between:-90,90',
+                'user_location.lng' => 'nullable|numeric|between:-180,180',
                 'region' => 'nullable|string|max:255',
             ]);
 
@@ -61,18 +80,21 @@ class MainController extends Controller
                 ], 422);
             }
 
-            $fields = $request->input('fields');
-            $userLocation = $request->input('user_location');
-            $region = $request->input('region');
-            $zone = $request->input('zone', 'Northern Ghana (Savannah Zone)');
+            $fields = $data['fields'];
+            $userLocation = $data['user_location'] ?? null;
+            $region = $data['region'] ?? null;
+            $zone = $data['zone'] ?? 'Northern Ghana (Savannah Zone)';
 
             DB::beginTransaction();
 
             try {
-                // Calculate total area for all fields
+                // Pre-calculate areas for all fields (avoid duplicate calculations)
+                $fieldAreas = [];
                 $totalArea = 0;
-                foreach ($fields as $field) {
-                    $totalArea += $this->calculateFieldArea($field['coordinates']);
+                foreach ($fields as $index => $field) {
+                    $area = $this->calculateFieldArea($field['coordinates']);
+                    $fieldAreas[$index] = $area;
+                    $totalArea += $area;
                 }
 
                 // Create submission record
@@ -93,66 +115,73 @@ class MainController extends Controller
                     'status' => 'pending'
                 ]);
 
-                $savedFields = [];
+                // Prepare bulk insert data
+                $bulkFieldData = [];
+                $now = now();
+                
+                foreach ($fields as $index => $field) {
+                    // Handle image file upload
+                    $imagePath = null;
+                    if (isset($field['image']) && $field['image']->isValid()) {
+                        $imageFile = $field['image'];
+                        $imageName = 'field_' . $submission->id . '_' . $index . '_' . time() . '.' . $imageFile->getClientOriginalExtension();
+                        $imagePath = $imageFile->storeAs('field-images', $imageName, 'public');
+                    }
 
-                // Store each field in the database with submission reference
-                foreach ($fields as $field) {
-                    // Calculate area if not provided
-                    $area = $this->calculateFieldArea($field['coordinates']);
-
-                    $fieldData = [
+                    $bulkFieldData[] = [
                         'name' => $field['name'],
-                        'coordinates' => $field['coordinates'],
+                        'coordinates' => json_encode($field['coordinates']), // Store as JSON
                         'center_lat' => $field['center'][0],
                         'center_lng' => $field['center'][1],
-                        'area_hectares' => $area,
+                        'area_hectares' => $fieldAreas[$index],
                         'region' => $field['region'],
                         'country' => $field['country'],
                         'crop' => $field['crop'] ?? null,
                         'variety' => $field['variety'] ?? null,
-                        'image' => $field['image'] ?? null,
+                        'image' => $imagePath ? asset('storage/' . $imagePath) : null, // Store public URL
                         'user_lat' => $userLocation['lat'] ?? null,
                         'user_lng' => $userLocation['lng'] ?? null,
                         'submission_id' => $submission->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
-
-                    $savedField = Field::create($fieldData);
-                    $savedFields[] = $savedField;
-
-                    Log::info('Field saved to database', [
-                        'field_id' => $savedField->id,
-                        'field_name' => $savedField->name,
-                        'submission_id' => $submission->id,
-                        'region' => $savedField->region,
-                        'area_hectares' => $savedField->area_hectares
-                    ]);
                 }
+
+                // Bulk insert all fields at once
+                Field::insert($bulkFieldData);
+                
+                // Get the inserted fields for response
+                $savedFields = Field::where('submission_id', $submission->id)->get();
+
+                // Log once after all fields are saved (reduced logging)
+                Log::info('Fields saved to database', [
+                    'submission_id' => $submission->id,
+                    'field_count' => count($savedFields),
+                    'total_area' => $totalArea,
+                    'region' => $region,
+                    'zone' => $zone
+                ]);
 
                 // Mark submission as processing (will be processed by scheduled task)
                 $submission->update(['status' => 'processing']);
 
                 DB::commit();
 
+                // Log submission success (reduced data for performance)
                 Log::info('Submission created successfully', [
                     'submission_id' => $submission->id,
-                    'unique_key' => $submission->unique_submission_key,
                     'field_count' => count($savedFields),
                     'total_area' => $totalArea,
-                    'user_location' => $userLocation,
-                    'region' => $region,
-                    'zone' => $zone,
-                    'timestamp' => now()
+                    'region' => $region
                 ]);
 
+                // Return minimal response for faster processing
                 return response()->json([
                     'success' => true,
                     'message' => 'Fields saved successfully',
                     'data' => [
                         'submission_id' => $submission->id,
                         'unique_submission_key' => $submission->unique_submission_key,
-                        'saved_fields' => $savedFields,
                         'total_fields' => count($savedFields),
                         'total_area_hectares' => $totalArea,
                         'region' => $region,

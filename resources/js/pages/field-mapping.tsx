@@ -12,6 +12,7 @@ import {
     Pencil,
     Ruler,
     Send,
+    Settings,
     Trash2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -51,11 +52,33 @@ const mapContainerStyle = {
 };
 
 const libraries: ('drawing' | 'geometry')[] = ['drawing', 'geometry'];
-
+const agricultureTowns = [
+    { name: "Akumadan", region: "Ashanti", region_code: "GHAH", latitude: 6.5290, longitude: -1.7373, main_crops: ["tomato", "maize", "cassava"] },
+    { name: "Tapa Abotoase", region: "Oti", region_code: "GHOT", latitude: 7.4000, longitude: 0.3000, main_crops: ["yam", "plantain", "cassava"] },
+    { name: "Adugyama", region: "Ashanti", region_code: "GHAH", latitude: 6.9500, longitude: -1.9000, main_crops: ["cocoa", "rice", "plantain"] },
+    { name: "Jasikan", region: "Oti", region_code: "GHOT", latitude: 7.4170, longitude: 0.4666, main_crops: ["cocoa", "oil palm"] },
+    { name: "Bolgatanga", region: "Upper East", region_code: "GHUE", latitude: 10.7856, longitude: -0.8514, main_crops: ["sorghum", "millet", "groundnut"] },
+    { name: "Wa", region: "Upper West", region_code: "GHUW", latitude: 10.0622, longitude: -2.5013, main_crops: ["maize", "cowpea", "sesame"] },
+    { name: "Tamale", region: "Northern", region_code: "GHNP", latitude: 9.4329, longitude: -0.8485, main_crops: ["maize", "millet", "soybean"] },
+    { name: "Sunyani", region: "Bono", region_code: "GHBO", latitude: 7.3390, longitude: -2.3290, main_crops: ["cassava", "yam", "plantain"] },
+    { name: "Cape Coast", region: "Central", region_code: "GHCP", latitude: 5.1057, longitude: -1.2466, main_crops: ["cocoa", "coconut", "cassava"] },
+    { name: "Koforidua", region: "Eastern", region_code: "GHEP", latitude: 6.0833, longitude: -0.2500, main_crops: ["oil palm", "cocoa", "plantain"] },
+    { name: "Takoradi", region: "Western", region_code: "GHWP", latitude: 4.9042, longitude: -1.7599, main_crops: ["pineapple", "cocoa", "banana"] },
+    { name: "Ho", region: "Volta", region_code: "GHTV", latitude: 6.6119, longitude: 0.4703, main_crops: ["rice", "oil palm", "cassava"] },
+    { name: "Kumasi", region: "Ashanti", region_code: "GHAH", latitude: 6.7001, longitude: -1.6308, main_crops: ["plantain", "yam", "maize"] },
+    { name: "Techiman", region: "Bono East", region_code: "GHBE", latitude: 7.5833, longitude: -1.9333, main_crops: ["yam", "maize", "cassava"] },
+    { name: "Damongo", region: "Savannah", region_code: "GHSV", latitude: 9.1000, longitude: -1.8000, main_crops: ["sorghum", "millet", "cowpea"] },
+    { name: "Nalerigu", region: "Northern East", region_code: "GHNE", latitude: 9.9500, longitude: -0.8333, main_crops: ["groundnut", "yams", "cassava"] },
+    { name: "Ahamansu", region: "Oti", region_code: "GHOT", latitude: 6.8000, longitude: 0.6000, main_crops: ["cocoa", "oil palm"] },
+    { name: "Kenyasi", region: "Ahafo", region_code: "GHAF", latitude: 6.7667, longitude: -2.1667, main_crops: ["cocoa", "plantain", "cassava"] },
+    { name: "Bawku", region: "Upper East", region_code: "GHUE", latitude: 11.0598, longitude: -0.4807, main_crops: ["groundnut", "sesame", "millet"] },
+    { name: "Akroso", region: "Central", region_code: "GHCP", latitude: 5.1750, longitude: -0.8680, main_crops: ["cocoa", "cassava", "plantain"] }
+  ];
+  
 // Crop data for different regions
 const cropData = {
     'Northern Ghana (Savannah Zone)': [
-        'Maize', 'Sorghum', 'Millet', 'Groundnut (Peanut)', 'Yam', 'Rice',
+        'Cocoa', 'Maize', 'Sorghum', 'Millet', 'Groundnut (Peanut)', 'Yam', 'Rice',
         'Cowpea', 'Soybean', 'Bambara beans', 'Cassava', 'Shea (Sheanut)',
         'Sesame', 'Cotton', 'Sweet potato', 'Guinea corn'
     ],
@@ -151,7 +174,7 @@ interface FieldData {
     region: string;
     country: string;
     address?: string;
-    image?: string;
+    image?: File;
     createdAt: Date;
 }
 
@@ -161,16 +184,17 @@ interface ToolboxProps {
     onClearFields: () => void;
     onLocateMe: () => void;
     onEditFields: () => void;
+    region: string;
 }
 
 const Toolbox: React.FC<ToolboxProps> = React.memo(
-    ({ onToolSelect, activeTool, onClearFields, onLocateMe, onEditFields }) => {
+    ({ onToolSelect, activeTool, onClearFields, onLocateMe, onEditFields, region }) => {
         const tools = [
-            { id: 'measure', icon: Ruler, label: 'Measure' },
-            { id: 'draw', icon: Pencil, label: 'Draw' },
-            { id: 'edit', icon: Edit3, label: 'Edit' },
-            { id: 'clear', icon: Trash2, label: 'Clear' },
-            { id: 'locate', icon: Navigation, label: 'Locate' },
+            { id: 'draw', icon: Pencil, label: 'Draw', color: 'emerald' },
+            { id: 'edit', icon: Edit3, label: 'Edit', color: 'blue' },
+            { id: 'measure', icon: Ruler, label: 'Measure', color: 'purple' },
+            { id: 'locate', icon: Navigation, label: 'Locate', color: 'orange' },
+            { id: 'clear', icon: Trash2, label: 'Clear', color: 'red' },
         ];
 
         const handleClick = (id: string) => {
@@ -181,27 +205,49 @@ const Toolbox: React.FC<ToolboxProps> = React.memo(
         };
 
         return (
-            <Card className="absolute top-4 left-4 z-50 border border-slate-700 bg-slate-900/90 backdrop-blur-md">
-                <CardContent className="flex gap-2 p-2">
-                    {tools.map(({ id, icon: Icon, label }) => {
+            <Card className="absolute top-4 right-4 z-50 border-0 bg-white/95 backdrop-blur-xl shadow-lg rounded-xl overflow-hidden">
+                <CardContent className="p-2 sm:p-3">
+                    {/* Header - Hidden on mobile */}
+                    <div className="hidden sm:flex items-center gap-2 mb-3">
+                        <div className="bg-emerald-100 p-1.5 rounded-lg">
+                            <Settings className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-800 text-sm">Map Tools</h3>
+                            {/* <p className="text-gray-500 text-xs">in {region}</p> */}
+                        </div>
+                    </div>
+                    
+                    {/* Tools Horizontal */}
+                    <div className="flex gap-1">
+                        {tools.map(({ id, icon: Icon, label, color }) => {
                         const active = activeTool === id;
+                            const colorClasses = {
+                                emerald: active ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
+                                blue: active ? 'bg-blue-500 text-white shadow-blue-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+                                purple: active ? 'bg-purple-500 text-white shadow-purple-200' : 'bg-purple-50 text-purple-600 hover:bg-purple-100',
+                                orange: active ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-orange-50 text-orange-600 hover:bg-orange-100',
+                                red: active ? 'bg-red-500 text-white shadow-red-200' : 'bg-red-50 text-red-600 hover:bg-red-100',
+                            };
+                            
                         return (
                             <Button
                                 key={id}
-                                size="sm"
-                                variant={active ? 'default' : 'outline'}
-                                className={`flex h-12 w-12 flex-col items-center justify-center ${
-                                    active
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-slate-800 text-slate-300'
+                                    variant="ghost"
+                                    className={`h-8 sm:h-10 px-2 sm:px-3 rounded-lg transition-all duration-200 ${colorClasses[color as keyof typeof colorClasses]} ${
+                                        active ? 'shadow-md scale-105' : 'hover:scale-105'
                                 }`}
                                 onClick={() => handleClick(id)}
-                            >
-                                <Icon className="mb-1 h-4 w-4" />
-                                <span className="text-[11px]">{label}</span>
+                                    title={label}
+                                >
+                                    <div className="flex items-center gap-1 sm:gap-2">
+                                        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        <span className="text-xs font-medium hidden md:inline">{label}</span>
+                                    </div>
                             </Button>
                         );
                     })}
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -217,6 +263,7 @@ interface FieldSidebarProps {
     isSubmitting: boolean;
     selectedField?: FieldData;
     zone: 'Northern Ghana (Savannah Zone)' | 'Southern Ghana (Forest & Coastal Zone)';
+    region: string;
 }
 
 const FieldSidebar: React.FC<FieldSidebarProps> = React.memo(
@@ -229,8 +276,10 @@ const FieldSidebar: React.FC<FieldSidebarProps> = React.memo(
         isSubmitting,
         selectedField,
         zone,
+        region,
     }) => {
         const [editingField, setEditingField] = useState<string | null>(null);
+        const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
         const calculateArea = (coordinates: google.maps.LatLng[]) => {
             // Simple area calculation using shoelace formula
@@ -244,163 +293,158 @@ const FieldSidebar: React.FC<FieldSidebarProps> = React.memo(
         };
 
         return (
-            <Card className="absolute top-28 left-4 z-[1000] flex max-h-[calc(100vh-8rem)] w-80 flex-col border-slate-700 bg-slate-900/95 shadow-2xl backdrop-blur-sm">
-                <CardHeader className="flex-shrink-0 border-b border-slate-700 bg-gradient-to-r from-emerald-800 to-emerald-900">
-                    <CardTitle className="flex items-center justify-between text-lg text-white">
-                        <span className="flex items-center">
-                            <MapPin className="mr-2 h-5 w-5 text-emerald-300" />
-                            Farm Fields
-                        </span>
-                        <Badge
-                            variant="secondary"
-                            className="border-emerald-500/30 bg-emerald-600/20 text-emerald-300"
-                        >
-                            {fields.length}
-                        </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-emerald-200">
-                        Manage your farm fields and crop information
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4 overflow-y-auto bg-slate-800/30">
-                    {fields.length === 0 ? (
-                        <div className="py-12 text-center text-slate-300">
-                            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-600 bg-slate-700/50 p-6">
-                                <MapPin className="h-10 w-10 text-emerald-400" />
+            <>
+                {/* Responsive Sidebar */}
+                <div className={`fixed top-0 left-0 h-full w-80 z-[1000] flex-col bg-white/95 backdrop-blur-xl shadow-2xl border-r border-gray-200/50 ${
+                    mobileMenuOpen ? 'flex' : 'hidden sm:flex'
+                }`}>
+                {/* Dashboard Header */}
+                <div className="flex-shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-2 rounded-xl">
+                                <MapPin className="h-6 w-6 text-white" />
                             </div>
-                            <p className="font-medium text-slate-200">
-                                No fields drawn yet
-                            </p>
-                            <p className="text-sm text-slate-400">
-                                Use the draw tool to create your first field
-                            </p>
+                            <div>
+                                <h2 className="font-bold text-white text-lg">Field Dashboard</h2>
+                                <p className="text-emerald-100 text-sm">Mapping in {region}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 rounded-full px-4 py-2">
+                                <span className="text-white font-bold text-lg">{fields.length}</span>
+                            </div>
+                            {/* Mobile Close Button */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-white/20 text-white sm:hidden"
+                                onClick={() => setMobileMenuOpen(false)}
+                                title="Close sidebar"
+                            >
+                                <div className="w-4 h-0.5 bg-white rotate-45"></div>
+                                <div className="w-4 h-0.5 bg-white -rotate-45 -translate-y-0.5"></div>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+                {/* Dashboard Content */}
+                <div className="flex-1 overflow-y-auto bg-gray-50/30 p-6">
+                    {fields.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full py-12">
+                                <div className="bg-emerald-100 rounded-full p-6 mb-6">
+                                    <MapPin className="h-12 w-12 text-emerald-600" />
+                            </div>
+                                <h3 className="font-semibold text-gray-800 text-xl mb-2">
+                                    No Fields Yet
+                                </h3>
+                                <p className="text-gray-500 text-center mb-8 max-w-xs">
+                                    Start mapping your farm by drawing your first field
+                                </p>
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 w-full">
+                                    <div className="flex items-center gap-2 text-emerald-700 text-sm mb-2">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                        <span className="font-medium">Quick Start</span>
+                                    </div>
+                                    <p className="text-emerald-600 text-sm">
+                                        Click "Draw" in the toolbox to begin mapping
+                                    </p>
+                                </div>
                         </div>
                     ) : (
-                        fields.map((field) => (
-                            <Card
+                    <div className="space-y-3">
+                        {fields.map((field) => (
+                            <div
                                 key={field.id}
-                                className={`cursor-pointer border-slate-600 bg-slate-800/60 transition-colors hover:bg-slate-700/60 ${
+                                className={`bg-white rounded-lg border transition-all duration-200 hover:shadow-md ${
                                     selectedField?.id === field.id
-                                        ? 'bg-slate-700/60 ring-2 ring-emerald-500'
-                                        : ''
+                                        ? 'border-emerald-500 bg-emerald-50/50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
-                                <CardContent className="p-6">
-                                    <div className="mb-3 flex items-start justify-between">
-                                        <div>
-                                            <h4 className="font-medium text-slate-200">
-                                                {field.name}
-                                            </h4>
-                                            <p className="text-sm text-slate-400">
-                                                {field.region}, {field.country}
-                                            </p>
+                                <div className="p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                            <h4 className="font-semibold text-gray-800 text-sm">{field.name}</h4>
                                         </div>
                                         <div className="flex gap-1">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() =>
-                                                    setEditingField(
-                                                        editingField ===
-                                                            field.id
-                                                            ? null
-                                                            : field.id,
-                                                    )
-                                                }
+                                                className="h-8 w-8 p-0 hover:bg-emerald-100 hover:text-emerald-600 border border-gray-200 text-emerald-600"
+                                                onClick={() => setEditingField(editingField === field.id ? null : field.id)}
+                                                title="Edit field"
                                             >
                                                 <Edit3 className="h-4 w-4" />
                                             </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() =>
-                                                    onFieldDelete(field.id)
-                                                }
+                                                className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 border border-gray-200 text-red-600"
+                                                onClick={() => onFieldDelete(field.id)}
+                                                title="Delete field"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">
-                                                Area:
-                                            </span>
-                                            <span className="text-slate-200">
-                                                {calculateArea(
-                                                    field.coordinates,
-                                                ).toFixed(2)}{' '}
-                                                ha
-                                            </span>
+                                    {/* Minimal Stats */}
+                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                        <div className="bg-emerald-50 rounded px-2 py-1">
+                                            <div className="text-xs text-emerald-600">Area</div>
+                                            <div className="text-sm font-bold text-emerald-700">
+                                                {calculateArea(field.coordinates).toFixed(1)} ha
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">
-                                                Lat:
-                                            </span>
-                                            <span className="text-slate-200">
-                                                {field.center.lat().toFixed(6)}
-                                            </span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">
-                                                Lng:
-                                            </span>
-                                            <span className="text-slate-200">
-                                                {field.center.lng().toFixed(6)}
-                                            </span>
+                                        <div className="bg-blue-50 rounded px-2 py-1">
+                                            <div className="text-xs text-blue-600">Location</div>
+                                            <div className="text-sm font-bold text-blue-700">
+                                                {field.center.lat().toFixed(3)}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <Separator className="my-3" />
-
                                     {editingField === field.id ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 bg-gray-50 rounded-lg p-3 mt-3">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Edit3 className="h-3 w-3 text-emerald-600" />
+                                                <span className="text-sm font-medium text-gray-700">Edit Field</span>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                {/* Field Name */}
                                             <div>
-                                                <Label
-                                                    htmlFor={`name-${field.id}`}
-                                                >
+                                                    <Label htmlFor={`name-${field.id}`} className="text-xs font-medium text-gray-600">
                                                     Field Name
                                                 </Label>
                                                 <Input
                                                     id={`name-${field.id}`}
                                                     value={field.name}
-                                                    onChange={(
-                                                        e: React.ChangeEvent<HTMLInputElement>,
-                                                    ) =>
-                                                        onFieldUpdate(
-                                                            field.id,
-                                                            {
-                                                                name: e.target
-                                                                    .value,
-                                                            },
-                                                        )
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                            onFieldUpdate(field.id, { name: e.target.value })
                                                     }
                                                     placeholder="Enter field name"
+                                                        className="mt-1 h-8 text-sm text-gray-600 placeholder:text-gray-400"
                                                 />
                                             </div>
+                                                
+                                                {/* Crop Selection */}
                                             <div>
-                                                <Label
-                                                    htmlFor={`crop-${field.id}`}
-                                                >
-                                                    Crop *
+                                                    <Label htmlFor={`crop-${field.id}`} className="text-xs font-medium text-gray-600">
+                                                        Crop
                                                 </Label>
                                                 <Select
                                                     value={field.crop || ''}
                                                     onValueChange={(value) =>
-                                                        onFieldUpdate(field.id, {
-                                                            crop: value,
-                                                        })
+                                                            onFieldUpdate(field.id, { crop: value })
                                                     }
                                                 >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select crop" />
+                                                        <SelectTrigger className="mt-1 h-8 text-sm text-gray-600">
+                                                            <SelectValue placeholder="Select or type crop" className="text-gray-600" />
                                                     </SelectTrigger>
-                                                    <SelectContent 
-                                                        className="z-[1100]" 
-                                                        position="popper"
-                                                        sideOffset={4}
-                                                    >
+                                                        <SelectContent className="z-[1100]" position="popper" sideOffset={4}>
                                                         {cropData[zone].map((crop) => (
                                                             <SelectItem key={crop} value={crop}>
                                                                 {crop}
@@ -408,117 +452,135 @@ const FieldSidebar: React.FC<FieldSidebarProps> = React.memo(
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
+                                                    
+                                                    {/* Custom Crop Input */}
+                                                    {/* <div className="mt-1">
+                                                        <Input
+                                                            value={field.crop || ''}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                                onFieldUpdate(field.id, { crop: e.target.value })
+                                                            }
+                                                            placeholder="Or type custom crop name"
+                                                            className="h-8 text-sm"
+                                                        />
+                                                    </div> */}
                                             </div>
+                                                
+                                                {/* Optional Variety */}
                                             <div>
-                                                <Label
-                                                    htmlFor={`variety-${field.id}`}
-                                                >
-                                                    Variety *
+                                                    <Label htmlFor={`variety-${field.id}`} className="text-xs font-medium text-gray-600">
+                                                        Variety (Optional)
                                                 </Label>
                                                 <Input
                                                     id={`variety-${field.id}`}
                                                     value={field.variety || ''}
-                                                    onChange={(
-                                                        e: React.ChangeEvent<HTMLInputElement>,
-                                                    ) =>
-                                                        onFieldUpdate(
-                                                            field.id,
-                                                            {
-                                                                variety:
-                                                                    e.target
-                                                                        .value,
-                                                            },
-                                                        )
-                                                    }
-                                                    placeholder="Enter variety name"
-                                                    required
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                            onFieldUpdate(field.id, { variety: e.target.value })
+                                                        }
+                                                        placeholder="Enter variety (optional)"
+                                                        className="mt-1 h-8 text-sm text-gray-600"
                                                 />
                                             </div>
+                                            </div>
+                                            
+                                            <div className="flex gap-1 pt-2">
                                             <Button
                                                 size="sm"
-                                                onClick={() =>
-                                                    setEditingField(null)
-                                                }
-                                                className="w-full"
+                                                    onClick={() => setEditingField(null)}
+                                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-7 text-xs"
                                             >
                                                 Save
                                             </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setEditingField(null)}
+                                                    className="flex-1 h-7 text-xs"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </div>
                                         </div>
                                         ) : (
-                                            <div className="space-y-2">
-                                                {field.crop && field.variety ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant="outline">
+                                        <div className="mt-2">
+                                            {field.crop ? (
+                                                <div className="space-y-1">
+                                                    <div className="flex gap-1">
+                                                        <Badge className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1">
                                                             {field.crop}
                                                         </Badge>
-                                                        <Badge variant="secondary">
+                                                        {field.variety && (
+                                                            <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-1">
                                                             {field.variety}
                                                         </Badge>
+                                                        )}
+                                                    </div>
+                                                    {!field.variety && (
+                                                        <p className="text-xs text-gray-500">No variety specified</p>
+                                                    )}
                                                     </div>
                                                 ) : (
-                                                    <div className="space-y-2">
-                                                        <p className="text-sm text-red-400 italic">
-                                                            ⚠️ Crop and variety required
-                                                        </p>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setEditingField(field.id)}
-                                                            className="w-full"
-                                                        >
-                                                            <Edit3 className="mr-2 h-4 w-4" />
-                                                            Add Crop & Variety
-                                                        </Button>
+                                                <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                                                    <p className="text-xs text-amber-600">Add crop information</p>
                                                     </div>
                                                 )}
                                             </div>
                                         )}
 
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="mt-3 w-full border-slate-600 bg-slate-700/50 text-slate-200 hover:bg-slate-600/50 hover:text-white"
-                                        onClick={() => onFieldSelect(field)}
-                                    >
-                                        <MapPin className="mr-2 h-4 w-4" />
-                                        View on Map
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))
-                    )}
-                </CardContent>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                </div>
 
-                {/* Submit Button */}
-                <div className="flex-shrink-0 border-t border-slate-700 bg-slate-800/50 p-4">
+                {/* Dashboard Footer */}
+                <div className="flex-shrink-0 border-t border-gray-200 bg-white p-6">
                     {(() => {
-                        const incompleteFields = fields.filter(field => !field.crop || !field.variety);
+                        const incompleteFields = fields.filter(field => !field.crop);
                         const canSubmit = fields.length > 0 && incompleteFields.length === 0;
                         
                         return (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {incompleteFields.length > 0 && (
-                                    <p className="text-sm text-red-400">
-                                        ⚠️ {incompleteFields.length} field{incompleteFields.length !== 1 ? 's' : ''} missing crop/variety
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                        <p className="text-sm text-amber-700">
+                                            ⚠️ {incompleteFields.length} field{incompleteFields.length !== 1 ? 's' : ''} need crop information
                                     </p>
+                                    </div>
                                 )}
                                 <Button
                                     onClick={onSubmit}
                                     disabled={!canSubmit || isSubmitting}
-                                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 py-3 font-medium text-white hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50"
+                                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 py-3 font-semibold text-white hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 rounded-xl"
                                 >
                                     <Send className="mr-2 h-4 w-4" />
                                     {isSubmitting
                                         ? 'Submitting...'
                                         : canSubmit 
                                             ? `Submit ${fields.length} Field${fields.length !== 1 ? 's' : ''}`
-                                            : 'Complete crop details to submit'}
+                                            : 'Add Crop Information'}
                                 </Button>
                             </div>
                         );
                     })()}
                 </div>
-            </Card>
+            </div>
+
+                {/* Mobile Hamburger Button */}
+                <div className="fixed bottom-4 left-4 z-[1000] sm:hidden">
+                    <Button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="h-14 w-14 rounded-full bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                    >
+                        <div className="flex flex-col items-center gap-1">
+                            <div className={`w-4 h-0.5 bg-white transition-transform duration-200 ${mobileMenuOpen ? 'rotate-45 translate-y-1' : ''}`}></div>
+                            <div className={`w-4 h-0.5 bg-white transition-opacity duration-200 ${mobileMenuOpen ? 'opacity-0' : ''}`}></div>
+                            <div className={`w-4 h-0.5 bg-white transition-transform duration-200 ${mobileMenuOpen ? '-rotate-45 -translate-y-1' : ''}`}></div>
+                        </div>
+                    </Button>
+                </div>
+            </>
         );
     },
 );
@@ -548,24 +610,23 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
         libraries: libraries,
     });
 
-    // Ghana coordinates - focusing on Tamale region
-    const ghanaBounds = {
-        tamale: { lat: 9.4008, lng: -0.8393 },
-        accra: { lat: 5.6037, lng: -0.187 },
-        kumasi: { lat: 6.6885, lng: -1.6244 },
-        capeCoast: { lat: 5.1036, lng: -1.2466 },
-    };
-
+    // Get region coordinates from agricultureTowns array
     const getRegionCoordinates = (regionName: string) => {
         const normalizedRegion = regionName.toLowerCase();
-        return (
-            ghanaBounds[normalizedRegion as keyof typeof ghanaBounds] ||
-            ghanaBounds.tamale
+        const regionData = agricultureTowns.find(
+            town => town.name.toLowerCase() === normalizedRegion
         );
+        
+        if (regionData) {
+            return { lat: regionData.latitude, lng: regionData.longitude };
+        }
+        
+        // Fallback to Tamale if region not found
+        return { lat: 9.4329, lng: -0.8485 };
     };
 
     const captureFieldSnapshot = React.useCallback(
-        async (field: FieldData): Promise<string | null> => {
+        async (field: FieldData): Promise<File | null> => {
             try {
                 // Calculate field bounds
                 const bounds = new google.maps.LatLngBounds();
@@ -608,15 +669,10 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
                     throw new Error('Failed to fetch static map image');
                 }
 
-                // Convert to base64 data URL
+                // Convert to File object instead of base64
                 const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        resolve(reader.result as string);
-                    };
-                    reader.readAsDataURL(blob);
-                });
+                const fileName = `field_${field.name.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.png`;
+                return new File([blob], fileName, { type: 'image/png' });
             } catch (error) {
                 console.error('Failed to capture field snapshot:', error);
                 return null;
@@ -649,7 +705,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
     const onMapLoad = React.useCallback(
         (map: google.maps.Map) => {
             setMap(map);
-
+            
             const drawingManager = new google.maps.drawing.DrawingManager({
                 drawingMode: null,
                 drawingControl: false,
@@ -772,11 +828,11 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
                             `Your Location (accuracy: ${Math.round(accuracy)}m)`,
                         );
                         userMarker.setIcon({
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
                             fillColor: '#4285f4',
-                            fillOpacity: 1,
-                            strokeColor: '#ffffff',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
                             strokeWeight: 3,
                         });
 
@@ -837,76 +893,13 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
         }
     }, [map]);
 
-    // Auto-locate user when component loads
+    // Set map to focus on the selected region
     useEffect(() => {
         if (isLoaded && map) {
-            // Ask for permission and locate user automatically
-            if (navigator.geolocation) {
-                toast.info('Requesting your location permission...');
-
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude, accuracy } =
-                            position.coords;
-
-                        // Store user location in state
-                        setUserLocation({ lat: latitude, lng: longitude });
-
-                        const userLocationLatLng = new google.maps.LatLng(
-                            latitude,
-                            longitude,
-                        );
-
-                        // Check if accuracy is good enough (within 100 meters)
-                        if (accuracy > 100) {
-                            toast.error(
-                                `Location accuracy is poor (${Math.round(accuracy)}m). Using GPS anyway.`,
-                            );
-                        }
-
-                        // Set map center to user location
-                        map.setCenter(userLocationLatLng);
-                        map.setZoom(16); // Higher zoom for better field mapping
-
-                        toast.success(
-                            `Located you at: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (accuracy: ${Math.round(accuracy)}m)`,
-                        );
-                    },
-                    (error) => {
-                        console.error('Auto-location error:', error);
-
-                        let errorMessage = 'Unable to get your location. ';
-                        switch (error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMessage +=
-                                    'Location access denied by user.';
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMessage +=
-                                    'Location information unavailable.';
-                                break;
-                            case error.TIMEOUT:
-                                errorMessage += 'Location request timed out.';
-                                break;
-                            default:
-                                errorMessage += 'Unknown error occurred.';
-                                break;
-                        }
-
-                        toast.error(errorMessage);
-                        // Continue with default region location if auto-location fails
-                        toast.info(`Using default location: ${region}`);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 20000, // Increased timeout
-                        maximumAge: 0, // Don't use cached location
-                    },
-                );
-            } else {
-                toast.error('Geolocation is not supported by this browser');
-                toast.info(`Using default location: ${region}`);
-            }
+            const regionCoords = getRegionCoordinates(region);
+            map.setCenter(regionCoords);
+            map.setZoom(15); // Good zoom level for field mapping
+            toast.info(`Map focused on ${region} region`);
         }
     }, [isLoaded, map, region]);
 
@@ -945,32 +938,51 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
             return;
         }
 
-        // Check if all fields have crop and variety
-        const incompleteFields = fields.filter(field => !field.crop || !field.variety);
+        // Check if all fields have crop (variety is optional)
+        const incompleteFields = fields.filter(field => !field.crop);
         if (incompleteFields.length > 0) {
-            toast.error(`Please add crop and variety for ${incompleteFields.length} field${incompleteFields.length !== 1 ? 's' : ''}`);
+            toast.error(`Please add crop information for ${incompleteFields.length} field${incompleteFields.length !== 1 ? 's' : ''}`);
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const fieldsData = fields.map((field) => ({
-                ...field,
-                coordinates: field.coordinates.map((latLng) => [
-                    latLng.lat(),
-                    latLng.lng(),
-                ]),
-                center: [field.center.lat(), field.center.lng()],
-            }));
+            // Prepare FormData for file uploads
+            const formData = new FormData();
+            
+            // Add non-file data
+            formData.append('user_location', JSON.stringify(userLocation));
+            formData.append('region', region);
+            formData.append('zone', zone);
+            
+            // Add fields data with file handling
+            fields.forEach((field, index) => {
+                formData.append(`fields[${index}][name]`, field.name);
+                formData.append(`fields[${index}][coordinates]`, JSON.stringify(
+                    field.coordinates.map((latLng) => [latLng.lat(), latLng.lng()])
+                ));
+                formData.append(`fields[${index}][center]`, JSON.stringify([
+                    field.center.lat(), 
+                    field.center.lng()
+                ]));
+                formData.append(`fields[${index}][region]`, field.region);
+                formData.append(`fields[${index}][country]`, field.country);
+                formData.append(`fields[${index}][crop]`, field.crop || '');
+                formData.append(`fields[${index}][variety]`, field.variety || '');
+                
+                // Add image file if it exists
+                if (field.image) {
+                    formData.append(`fields[${index}][image]`, field.image);
+                }
+            });
 
-            console.log('Submitting fields:', fieldsData);
+            console.log('Submitting fields with FormData');
 
-            // Submit to Laravel backend using axios - store coordinates in DB
-            const response = await axios.post('/fields', {
-                fields: fieldsData,
-                user_location: userLocation, // Include user's GPS location
-                region: region,
-                zone: zone, // Include agricultural zone
+            // Submit to Laravel backend using FormData for file uploads
+            const response = await axios.post('/fields', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
             const result = response.data;
@@ -1033,10 +1045,10 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
     );
 
     // Memoize the map center to prevent unnecessary re-renders
-    // Use user location if available, otherwise fall back to region coordinates
+    // Always use region coordinates for focused mapping
     const mapCenter = React.useMemo(
-        () => userLocation || { lat: regionCoords.lat, lng: regionCoords.lng },
-        [userLocation, regionCoords],
+        () => regionCoords,
+        [regionCoords],
     );
 
     if (!isLoaded) {
@@ -1057,7 +1069,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
             <MemoizedGoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={mapCenter}
-                zoom={12}
+                zoom={15}
                 onLoad={onMapLoad}
                 mapTypeId={google.maps.MapTypeId.SATELLITE}
                 options={mapOptions}
@@ -1088,6 +1100,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
                 onClearFields={handleClearFields}
                 onLocateMe={handleLocateMe}
                 onEditFields={handleEditFields}
+                region={region}
             />
 
             <FieldSidebar
@@ -1099,9 +1112,11 @@ const FieldMapping: React.FC<FieldMappingProps> = ({ region = 'Tamale', zone = '
                 isSubmitting={isSubmitting}
                 selectedField={selectedField}
                 zone={zone}
+                region={region}
             />
         </div>
     );
 };
 
 export default FieldMapping;
+

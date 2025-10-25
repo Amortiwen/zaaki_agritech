@@ -4,10 +4,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button" 
 import { MapPin, Leaf, Droplets, AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import GhanaMap from "@/components/GhanaMap"
+ 
 
 export default function SelectField() {
   const [step, setStep] = useState<"region" | "field" | "crops" | "review">("region")
   const [selectedRegion, setSelectedRegion] = useState("")
+  const [selectedRegionCode, setSelectedRegionCode] = useState("")
   const [search, setSearch] = useState("")
  
   const agricultureTowns = [
@@ -32,7 +35,6 @@ export default function SelectField() {
     { name: "Bawku", region: "Upper East", region_code: "GHUE", latitude: 11.0598, longitude: -0.4807, main_crops: ["groundnut", "sesame", "millet"] },
     { name: "Akroso", region: "Central", region_code: "GHCP", latitude: 5.1750, longitude: -0.8680, main_crops: ["cocoa", "cassava", "plantain"] }
   ];
-  
   
 
   const filteredRegions = agricultureTowns.filter((region : any) => 
@@ -60,7 +62,7 @@ export default function SelectField() {
               <p className="text-sm text-emerald-600">Precision farming starts here</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             {["region", "field", "crops", "review"].map((s, i) => (
               <div key={s} className="flex items-center">
                 <div
@@ -81,7 +83,7 @@ export default function SelectField() {
                 )}
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -100,32 +102,74 @@ export default function SelectField() {
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRegions.length > 0 ? filteredRegions.map((region : any) => (
                 <button
                   key={region.name}
-                  onClick={() => setSelectedRegion(region.name)}
-                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  onClick={() => {
+                    setSelectedRegion(region.name)
+                    setSelectedRegionCode(region.region_code)
+                  }}
+                  className={`p-6 rounded-xl border-2 transition-all text-left group hover:shadow-lg ${
                     selectedRegion === region.name
                       ? "border-emerald-600 bg-emerald-50 shadow-lg"
                       : "border-gray-200 bg-white hover:border-emerald-300"
                   }`}
                 >
-                  <div className="flex items-start gap-2 mb-2">
+                  {/* Map Section */}
+                  {/* <div className="mb-4 h-32 rounded-lg overflow-hidden">
+                    <GhanaMap
+                      selectedRegionCode={region.region_code}
+                      onRegionClick={(code: string) => {
+                        setSelectedRegion(region.name)
+                        setSelectedRegionCode(code)
+                      }}
+                      regionCoordinates={{
+                        latitude: region.latitude,
+                        longitude: region.longitude,
+                        name: region.name
+                      }}
+                    />
+                  </div> */}
+                  
+                  {/* Content Section */}
+                  <div className="flex items-start gap-2 mb-3">
                     <MapPin
                       className={`w-5 h-5 flex-shrink-0 ${selectedRegion === region.name ? "text-emerald-600" : "text-gray-400"}`}
                     />
                     {selectedRegion === region.name && <CheckCircle2 className="w-5 h-5 text-emerald-600 ml-auto" />}
                   </div>
+                  
                   <h3
-                    className={`font-semibold ${selectedRegion === region.name ? "text-emerald-900" : "text-gray-900"}`}
+                    className={`font-semibold text-lg mb-1 ${selectedRegion === region.name ? "text-emerald-900" : "text-gray-900"}`}
                   >
                     {region.name}
                   </h3>
-                  <p className="text-sm text-gray-500">{region.region}</p>
+                  <p className="text-sm text-gray-500 mb-2">{region.region}</p>
+                  
+                  {/* Main Crops */}
+                  <div className="flex flex-wrap gap-1">
+                    {region.main_crops.slice(0, 3).map((crop: string, index: number) => (
+                      <span 
+                        key={index}
+                        className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full"
+                      >
+                        {crop}
+                      </span>
+                    ))}
+                    {region.main_crops.length > 3 && (
+                      <span className="text-xs text-gray-400">
+                        +{region.main_crops.length - 3} more
+                      </span>
+                    )}
+                  </div>
                 </button>
               )) : (
-                <div className="text-gray-500 text-center">No regions found matching your search</div>
+                <div className="col-span-full text-gray-500 text-center py-12">
+                  <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg">No regions found matching your search</p>
+                  <p className="text-sm">Try a different search term</p>
+                </div>
               )}
             </div>
 

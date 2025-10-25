@@ -136,28 +136,34 @@ export default function AgriSenseDashboard({
 
     useEffect(() => {
         if (submissionKey) {
-            fetchLatestPrediction(submissionKey);
+            // Start by checking submission status
+            checkSubmissionStatus(submissionKey);
         }
     }, [submissionKey]);
 
-    // useEffect(() => {
-    //   // If submission is complete, don't poll
-    //   if (submissionKey && submissionStatus?.status === "completed") {
-    //     return
-    //   }
+    useEffect(() => {
+        // If submission is complete, don't poll
+        if (submissionStatus?.status === "completed") {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                setPollingInterval(null);
+            }
+            setIsPolling(false);
+            return;
+        }
 
-    //   // If we have a submission key, start polling for status
-    //   if (submissionKey) {
-    //     startPolling(submissionKey)
-    //   }
+        // If we have a submission key and it's not completed, start polling
+        if (submissionKey && submissionStatus?.status !== "completed") {
+            startPolling(submissionKey);
+        }
 
-    //   // Cleanup polling on unmount
-    //   return () => {
-    //     if (pollingInterval) {
-    //       clearInterval(pollingInterval)
-    //     }
-    //   }
-    // }, [submissionKey, predictions.length])
+        // Cleanup polling on unmount
+        return () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        };
+    }, [submissionKey, submissionStatus?.status]);
 
     const fetchLatestPrediction = async (submissionKey: string) => {
         setLoading(true);
@@ -167,18 +173,8 @@ export default function AgriSenseDashboard({
             const data = await response.json();
 
             if (data.success) {
-                if (data.processing) {
-                    // Predictions are still processing
-                    setPrediction(null);
-                    setIsPolling(true);
-                    // Start polling for updates
-                    setTimeout(() => {
-                        fetchLatestPrediction(submissionKey);
-                    }, 5000);
-                } else {
-                    setPrediction(data.data);
-                    setIsPolling(false);
-                }
+                setPrediction(data.data);
+                setIsPolling(false);
             } else {
                 console.error('API Error:', data.message);
                 setPrediction(null);
@@ -192,15 +188,20 @@ export default function AgriSenseDashboard({
     };
 
     const startPolling = (submissionKey: string) => {
+        // Don't start polling if already polling or if submission is completed
+        if (isPolling || submissionStatus?.status === "completed") {
+            return;
+        }
+
         setIsPolling(true);
 
         // Initial fetch
         checkSubmissionStatus(submissionKey);
 
-        // Set up polling every 5 seconds
+        // Set up polling every 3 seconds
         const interval = setInterval(() => {
             checkSubmissionStatus(submissionKey);
-        }, 5000);
+        }, 3000);
 
         setPollingInterval(interval);
     };
@@ -215,22 +216,36 @@ export default function AgriSenseDashboard({
 
             if (data.success) {
                 setSubmissionStatus(data.submission);
-                setPrediction(data.data || []);
 
-                // If all completed or any failed, stop polling
-                if (
-                    data.submission.all_completed ||
-                    data.submission.any_failed
-                ) {
+                // If submission is completed, fetch the full prediction data
+                if (data.submission.status === "completed") {
+                    // Stop polling
                     setIsPolling(false);
                     if (pollingInterval) {
                         clearInterval(pollingInterval);
                         setPollingInterval(null);
                     }
+                    // Fetch the complete prediction data
+                    await fetchLatestPrediction(submissionKey);
+                } else if (data.submission.status === "failed") {
+                    // Stop polling on failure
+                    setIsPolling(false);
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        setPollingInterval(null);
+                    }
+                    setPrediction(null);
                 }
+                // If still processing, continue polling (no action needed)
             }
         } catch (error) {
             console.error('Failed to check submission status:', error);
+            // On error, stop polling
+            setIsPolling(false);
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                setPollingInterval(null);
+            }
         }
     };
 
@@ -281,10 +296,17 @@ export default function AgriSenseDashboard({
                     <div className="flex items-center justify-center gap-3 text-green-600">
                         <Sparkles className="h-6 w-6 animate-bounce" />
                         <span className="text-lg font-medium">
-                            Processing your field data
+                            {submissionStatus?.status === "processing" 
+                                ? "Processing your field data" 
+                                : "Checking prediction status..."}
                         </span>
                         <Sparkles className="h-6 w-6 animate-bounce" />
                     </div>
+                    {submissionStatus && (
+                        <div className="mt-4 text-sm text-slate-500">
+                            Status: <span className="font-medium text-green-600">{submissionStatus.status}</span>
+                        </div>
+                    )}
                     <div className="mt-8 flex justify-center">
                         <div className="flex space-x-2">
                             <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce"></div>
@@ -298,7 +320,7 @@ export default function AgriSenseDashboard({
     );
 
     // Show loading if no prediction data and still loading/polling
-    if (loading || (isPolling && !prediction)) {
+    if (loading || (isPolling && !prediction) || (submissionStatus?.status === "processing")) {
         return <LoadingSkeleton />;
     }
 
@@ -471,9 +493,8 @@ export default function AgriSenseDashboard({
                                 <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-orange-100 to-red-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
                                     <Thermometer className="mb-2 h-8 w-8 text-orange-600 group-hover:animate-pulse" />
                                     <div className="text-2xl font-bold text-orange-700">
-                                        +
-                                        {prediction?.temperature_impact || '15'}
-                                        %
+                                       {prediction?.temperature_impact || '15'}
+                                        °C
                                     </div>
                                     <div className="text-xs text-orange-600 font-medium">
                                         Temperature
@@ -482,7 +503,7 @@ export default function AgriSenseDashboard({
                                 <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
                                     <Droplets className="mb-2 h-8 w-8 text-blue-600 group-hover:animate-pulse" />
                                     <div className="text-2xl font-bold text-blue-700">
-                                        +{prediction?.rainfall_impact || '15'}%
+                                            {prediction?.rainfall_impact || '15'} mm
                                     </div>
                                     <div className="text-xs text-blue-600 font-medium">
                                         Rainfall
@@ -491,7 +512,7 @@ export default function AgriSenseDashboard({
                                 <div className="group flex flex-col items-center rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
                                     <Wind className="mb-2 h-8 w-8 text-green-600 group-hover:animate-pulse" />
                                     <div className="text-2xl font-bold text-green-700">
-                                        {prediction?.humidity_impact || '-3'}%
+                                            {prediction?.humidity_impact || '-3'}%
                                     </div>
                                     <div className="text-xs text-green-600 font-medium">
                                         Humidity
