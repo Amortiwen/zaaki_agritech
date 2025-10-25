@@ -65,30 +65,9 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
         body: {
             predictionData,
             webSearch
-        },
-        onFinish: (message) => {
-            console.log('Chat finished:', message);
-        },
-        onError: (error) => {
-            console.error('Chat error:', error);
         }
-    });
+    } as any);
 
-    const testCSRF = async () => {
-        try {
-            const response = await fetch('/api/debug-csrf', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Content-Type': 'application/json',
-                },
-            });
-            const data = await response.json();
-            console.log('CSRF Debug:', data);
-        } catch (error) {
-            console.error('CSRF Test Error:', error);
-        }
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -115,152 +94,186 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
             {!isOpen && (
                 <Button
                     onClick={() => setIsOpen(true)}
-                    className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110"
+                    className="group h-16 w-16 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500 hover:scale-110 hover:rotate-3"
                 >
-                    <MessageCircle className="h-6 w-6" />
+                    <MessageCircle className="h-7 w-7 text-white group-hover:animate-pulse" />
+                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full animate-pulse"></div>
                 </Button>
             )}
 
             {/* Chat Interface */}
             {isOpen && (
-                <Card className="w-96 h-[600px] shadow-2xl border-0 bg-gradient-to-br from-white to-slate-50">
-                    <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Bot className="h-5 w-5" />
-                                AgriSense AI Assistant
-                            </CardTitle>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsOpen(false)}
-                                className="text-white hover:bg-white/20"
-                            >
-                                <ChevronDown className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="bg-white/20 text-white border-0">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                AI Powered
-                            </Badge>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setWebSearch(!webSearch)}
-                                className={cn(
-                                    "text-white hover:bg-white/20",
-                                    webSearch && "bg-white/20"
-                                )}
-                            >
-                                <Globe className="h-3 w-3 mr-1" />
-                                Web Search
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={testCSRF}
-                                className="text-white hover:bg-white/20"
-                            >
-                                Test CSRF
-                            </Button>
+                <Card className="w-[420px] h-[700px] shadow-2xl border-0 bg-gradient-to-br from-white via-slate-50 to-emerald-50/30 backdrop-blur-xl">
+                    <CardHeader className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white rounded-t-xl relative overflow-hidden">
+                        {/* Animated background pattern */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-cyan-400/20 animate-pulse"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
+                        
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                        <Bot className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-xl font-bold">AgriSense AI</CardTitle>
+                                        <p className="text-sm text-emerald-100">Your farming assistant</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsOpen(false)}
+                                    className="text-white hover:bg-white/20 rounded-full h-8 w-8 p-0"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
+                                    <Sparkles className="h-3 w-3 mr-1 animate-pulse" />
+                                    AI Powered
+                                </Badge>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setWebSearch(!webSearch)}
+                                    className={cn(
+                                        "text-white hover:bg-white/20 rounded-full transition-all",
+                                        webSearch && "bg-white/20"
+                                    )}
+                                >
+                                    <Globe className="h-4 w-4 mr-1" />
+                                    {webSearch ? 'Web On' : 'Web Off'}
+                                </Button>
+                            </div>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="p-0 flex flex-col h-[520px]">
+                    <CardContent className="p-0 flex flex-col h-[620px]">
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             {messages.length === 0 && (
-                                <div className="text-center py-8">
-                                    <Bot className="h-12 w-12 text-purple-500 mx-auto mb-4 animate-pulse" />
-                                    <h3 className="font-semibold text-slate-700 mb-2">
-                                        Ask me anything about your crop prediction!
+                                <div className="text-center py-12">
+                                    <div className="relative mb-8">
+                                        <div className="h-20 w-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full mx-auto flex items-center justify-center animate-pulse">
+                                            <Bot className="h-10 w-10 text-white" />
+                                        </div>
+                                        <div className="absolute -top-2 -right-2 h-6 w-6 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full animate-bounce"></div>
+                                    </div>
+                                    
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3">
+                                        🌱 Welcome to AgriSense AI!
                                     </h3>
-                                    <p className="text-sm text-slate-500 mb-4">
-                                        I can explain your data, provide insights, and answer questions.
+                                    <p className="text-slate-600 mb-6 leading-relaxed">
+                                        I'm here to help you understand your crop predictions, 
+                                        provide farming insights, and answer any questions about your fields.
                                     </p>
                                     
-                                    {/* Suggestions */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs text-slate-400 font-medium">Try asking:</p>
-                                        {suggestions.map((suggestion, index) => (
-                                            <Button
-                                                key={index}
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setInput(suggestion)}
-                                                className="w-full text-left justify-start text-xs h-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 hover:from-purple-100 hover:to-pink-100"
-                                            >
-                                                {suggestion}
-                                            </Button>
-                                        ))}
+                                    {/* Enhanced Suggestions */}
+                                    <div className="space-y-3">
+                                        <p className="text-sm text-slate-500 font-medium flex items-center gap-2">
+                                            <Sparkles className="h-4 w-4 text-emerald-500" />
+                                            Try asking me:
+                                        </p>
+                                        <div className="grid gap-2">
+                                            {suggestions.map((suggestion, index) => (
+                                                <Button
+                                                    key={index}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setInput(suggestion)}
+                                                    className="w-full text-left justify-start text-sm h-10 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 hover:from-emerald-100 hover:to-teal-100 hover:border-emerald-300 transition-all duration-200"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
+                                                        {suggestion}
+                                                    </div>
+                                                </Button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
                             {messages.map((message) => (
-                                <div key={message.id} className="space-y-2">
+                                <div key={message.id} className="space-y-4">
                                     {message.role === 'user' && (
                                         <div className="flex justify-end">
-                                            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg p-3 max-w-[80%] shadow-lg">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <User className="h-4 w-4" />
-                                                    <span className="text-xs font-medium">You</span>
+                                            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl rounded-br-md p-4 max-w-[85%] shadow-xl">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="h-6 w-6 bg-white/20 rounded-full flex items-center justify-center">
+                                                        <User className="h-3 w-3" />
+                                                    </div>
+                                                    <span className="text-xs font-semibold">You</span>
                                                 </div>
-                                                <p className="text-sm">{(message as any).content}</p>
+                                                <p className="text-sm leading-relaxed">{(message as any).content}</p>
                                             </div>
                                         </div>
                                     )}
 
                                     {message.role === 'assistant' && (
                                         <div className="flex justify-start">
-                                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3 max-w-[80%] shadow-lg">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Bot className="h-4 w-4 text-purple-600" />
-                                                    <span className="text-xs font-medium text-purple-700">AgriSense AI</span>
-                                                    <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 border-purple-300">
-                                                        <Sparkles className="h-3 w-3 mr-1" />
-                                                        AI
-                                                    </Badge>
-                                                    {webSearch && (
-                                                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
-                                                            <Globe className="h-3 w-3 mr-1" />
-                                                            Web
-                                                        </Badge>
-                                                    )}
+                                            <div className="bg-gradient-to-br from-white to-emerald-50/50 border border-emerald-200/50 rounded-2xl rounded-bl-md p-5 max-w-[90%] shadow-lg backdrop-blur-sm">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="h-8 w-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+                                                        <Bot className="h-4 w-4 text-white" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-semibold text-emerald-800">AgriSense AI</span>
+                                                            <Badge className="text-xs bg-emerald-100 text-emerald-700 border-0">
+                                                                <Sparkles className="h-3 w-3 mr-1" />
+                                                                AI
+                                                            </Badge>
+                                                            {webSearch && (
+                                                                <Badge className="text-xs bg-blue-100 text-blue-700 border-0">
+                                                                    <Globe className="h-3 w-3 mr-1" />
+                                                                    Web
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 
                                                 {/* Enhanced Response with AI Elements */}
-                                                <div className="text-sm text-slate-700 whitespace-pre-wrap">
+                                                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                                                     {(message as any).content}
                                                 </div>
 
                                                 {/* Chain of Thought Reasoning */}
                                                 {(message as any).reasoning && (
-                                                    <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                                            <span className="text-xs font-medium text-amber-700">AI Reasoning</span>
+                                                    <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/50 rounded-xl">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <div className="h-6 w-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+                                                                <AlertTriangle className="h-3 w-3 text-white" />
+                                                            </div>
+                                                            <span className="text-sm font-semibold text-amber-800">AI Reasoning</span>
                                                         </div>
-                                                        <p className="text-xs text-amber-700">{(message as any).reasoning}</p>
+                                                        <p className="text-sm text-amber-700 leading-relaxed">{(message as any).reasoning}</p>
                                                     </div>
                                                 )}
 
                                                 {/* Inline Citations */}
                                                 {(message as any).sources && (message as any).sources.length > 0 && (
-                                                    <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                            <span className="text-xs font-medium text-green-700">Sources</span>
+                                                    <div className="mt-4 p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 rounded-xl">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <div className="h-6 w-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+                                                                <CheckCircle2 className="h-3 w-3 text-white" />
+                                                            </div>
+                                                            <span className="text-sm font-semibold text-emerald-800">Sources</span>
                                                         </div>
-                                                        <div className="space-y-1">
+                                                        <div className="space-y-2">
                                                             {(message as any).sources.map((source: any, index: number) => (
-                                                                <div key={index} className="text-xs text-green-700">
+                                                                <div key={index} className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                                                                    <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
                                                                     <a 
                                                                         href={source.url} 
                                                                         target="_blank" 
                                                                         rel="noopener noreferrer"
-                                                                        className="hover:underline"
+                                                                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
                                                                     >
                                                                         {source.title}
                                                                     </a>
@@ -271,12 +284,12 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
                                                 )}
                                                 
                                                 {/* Actions */}
-                                                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-purple-200">
+                                                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-emerald-200/50">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => navigator.clipboard.writeText((message as any).content)}
-                                                        className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-100"
+                                                        className="h-8 px-3 text-xs text-emerald-600 hover:bg-emerald-100 rounded-full transition-all"
                                                     >
                                                         <Copy className="h-3 w-3 mr-1" />
                                                         Copy
@@ -285,7 +298,7 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => regenerate()}
-                                                        className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-100"
+                                                        className="h-8 px-3 text-xs text-emerald-600 hover:bg-emerald-100 rounded-full transition-all"
                                                     >
                                                         <RefreshCw className="h-3 w-3 mr-1" />
                                                         Regenerate
@@ -295,7 +308,7 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => setShowReasoning(!showReasoning)}
-                                                            className="h-6 px-2 text-xs text-amber-600 hover:bg-amber-100"
+                                                            className="h-8 px-3 text-xs text-amber-600 hover:bg-amber-100 rounded-full transition-all"
                                                         >
                                                             <AlertTriangle className="h-3 w-3 mr-1" />
                                                             {showReasoning ? 'Hide' : 'Show'} Reasoning
@@ -310,22 +323,26 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
 
                             {status === 'submitted' && (
                                 <div className="flex justify-start">
-                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3 max-w-[80%]">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Bot className="h-4 w-4 text-purple-600 animate-pulse" />
-                                            <span className="text-xs font-medium text-purple-700">AgriSense AI</span>
-                                            <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 border-purple-300">
-                                                <Sparkles className="h-3 w-3 mr-1 animate-spin" />
-                                                Thinking...
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex space-x-1">
-                                                <div className="h-2 w-2 bg-purple-500 rounded-full animate-bounce"></div>
-                                                <div className="h-2 w-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                                <div className="h-2 w-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 rounded-2xl rounded-bl-md p-5 max-w-[90%] shadow-lg backdrop-blur-sm">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="h-8 w-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center animate-pulse">
+                                                <Bot className="h-4 w-4 text-white" />
                                             </div>
-                                            <span className="text-xs text-purple-600">Analyzing your data...</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-emerald-800">AgriSense AI</span>
+                                                <Badge className="text-xs bg-emerald-100 text-emerald-700 border-0">
+                                                    <Sparkles className="h-3 w-3 mr-1 animate-spin" />
+                                                    Thinking...
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex space-x-1">
+                                                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                                                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                            </div>
+                                            <span className="text-sm text-emerald-600">Analyzing your crop data...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -334,10 +351,12 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
 
                         {/* Suggestions */}
                         {messages.length > 0 && (messages[messages.length - 1] as any)?.suggestions && (
-                            <div className="p-4 border-t border-slate-200 bg-gradient-to-r from-purple-50 to-pink-50">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Sparkles className="h-4 w-4 text-purple-600" />
-                                    <span className="text-sm font-medium text-purple-700">Suggested Questions</span>
+                            <div className="p-6 border-t border-emerald-200/50 bg-gradient-to-r from-emerald-50 to-teal-50">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="h-6 w-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+                                        <Sparkles className="h-3 w-3 text-white" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-emerald-800">Suggested Questions</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {(messages[messages.length - 1] as any).suggestions.map((suggestion: string, index: number) => (
@@ -346,9 +365,12 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setInput(suggestion)}
-                                            className="text-xs h-7 bg-white border-purple-200 text-purple-700 hover:bg-purple-100 hover:border-purple-300"
+                                            className="text-sm h-9 bg-white/80 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 rounded-full transition-all"
                                         >
-                                            {suggestion}
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
+                                                {suggestion}
+                                            </div>
                                         </Button>
                                     ))}
                                 </div>
@@ -356,22 +378,29 @@ export function AIChatbot({ predictionData, className }: AIChatbotProps) {
                         )}
 
                         {/* Input Form */}
-                        <form onSubmit={handleSubmit} className="p-4 border-t border-slate-200">
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Ask about your crop prediction..."
-                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                                    disabled={status === 'submitted'}
-                                />
+                        <form onSubmit={handleSubmit} className="p-6 border-t border-emerald-200/50 bg-gradient-to-r from-white to-emerald-50/30">
+                            <div className="flex gap-3">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        placeholder="Ask about your crop prediction..."
+                                        className="w-full px-4 py-3 border border-emerald-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white/80 backdrop-blur-sm transition-all"
+                                        disabled={status === 'submitted' || !csrfToken}
+                                    />
+                                    {!csrfToken && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-red-50/80 rounded-2xl">
+                                            <span className="text-xs text-red-600 font-medium">CSRF Token Loading...</span>
+                                        </div>
+                                    )}
+                                </div>
                                 <Button
                                     type="submit"
                                     disabled={!input.trim() || status === 'submitted' || !csrfToken}
-                                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4"
+                                    className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <Send className="h-4 w-4" />
+                                    <Send className="h-5 w-5" />
                                 </Button>
                             </div>
                         </form>

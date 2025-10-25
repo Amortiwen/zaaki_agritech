@@ -1,214 +1,147 @@
-import React, { useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Badge } from '../components/ui/badge';
-import { MapPin, ArrowRight, Map } from 'lucide-react';
+"use client"
 
-// Simple navigation function since we're using Inertia.js
-const navigate = (url: string) => {
-  window.location.href = url;
-};
+import { useState } from "react"
+import { Button } from "@/components/ui/button" 
+import { MapPin, Leaf, Droplets, AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 export default function SelectField() {
-  const [selectedRegion, setSelectedRegion] = useState('Tamale');
-
-  const ghanaRegions = [
-    { name: 'Tamale', description: 'Northern Region', coordinates: '9.4008, -0.8393' },
-    { name: 'Accra', description: 'Greater Accra', coordinates: '5.6037, -0.1870' },
-    { name: 'Kumasi', description: 'Ashanti Region', coordinates: '6.6885, -1.6244' },
-    { name: 'Cape Coast', description: 'Central Region', coordinates: '5.1036, -1.2466' },
-    { name: 'Takoradi', description: 'Western Region', coordinates: '4.8845, -1.7554' },
-    { name: 'Sunyani', description: 'Bono Region', coordinates: '7.3399, -2.3268' },
-    { name: 'Ho', description: 'Volta Region', coordinates: '6.6008, 0.4713' },
-    { name: 'Koforidua', description: 'Eastern Region', coordinates: '6.0941, -0.2590' }
+  const [step, setStep] = useState<"region" | "field" | "crops" | "review">("region")
+  const [selectedRegion, setSelectedRegion] = useState("")
+  const [search, setSearch] = useState("")
+ 
+  const agricultureTowns = [
+    { name: "Akumadan", region: "Ashanti", region_code: "GHAH", latitude: 6.5290, longitude: -1.7373, main_crops: ["tomato", "maize", "cassava"] },
+    { name: "Tapa Abotoase", region: "Oti", region_code: "GHOT", latitude: 7.4000, longitude: 0.3000, main_crops: ["yam", "plantain", "cassava"] },
+    { name: "Adugyama", region: "Ashanti", region_code: "GHAH", latitude: 6.9500, longitude: -1.9000, main_crops: ["cocoa", "rice", "plantain"] },
+    { name: "Jasikan", region: "Oti", region_code: "GHOT", latitude: 7.4170, longitude: 0.4666, main_crops: ["cocoa", "oil palm"] },
+    { name: "Bolgatanga", region: "Upper East", region_code: "GHUE", latitude: 10.7856, longitude: -0.8514, main_crops: ["sorghum", "millet", "groundnut"] },
+    { name: "Wa", region: "Upper West", region_code: "GHUW", latitude: 10.0622, longitude: -2.5013, main_crops: ["maize", "cowpea", "sesame"] },
+    { name: "Tamale", region: "Northern", region_code: "GHNP", latitude: 9.4329, longitude: -0.8485, main_crops: ["maize", "millet", "soybean"] },
+    { name: "Sunyani", region: "Bono", region_code: "GHBO", latitude: 7.3390, longitude: -2.3290, main_crops: ["cassava", "yam", "plantain"] },
+    { name: "Cape Coast", region: "Central", region_code: "GHCP", latitude: 5.1057, longitude: -1.2466, main_crops: ["cocoa", "coconut", "cassava"] },
+    { name: "Koforidua", region: "Eastern", region_code: "GHEP", latitude: 6.0833, longitude: -0.2500, main_crops: ["oil palm", "cocoa", "plantain"] },
+    { name: "Takoradi", region: "Western", region_code: "GHWP", latitude: 4.9042, longitude: -1.7599, main_crops: ["pineapple", "cocoa", "banana"] },
+    { name: "Ho", region: "Volta", region_code: "GHTV", latitude: 6.6119, longitude: 0.4703, main_crops: ["rice", "oil palm", "cassava"] },
+    { name: "Kumasi", region: "Ashanti", region_code: "GHAH", latitude: 6.7001, longitude: -1.6308, main_crops: ["plantain", "yam", "maize"] },
+    { name: "Techiman", region: "Bono East", region_code: "GHBE", latitude: 7.5833, longitude: -1.9333, main_crops: ["yam", "maize", "cassava"] },
+    { name: "Damongo", region: "Savannah", region_code: "GHSV", latitude: 9.1000, longitude: -1.8000, main_crops: ["sorghum", "millet", "cowpea"] },
+    { name: "Nalerigu", region: "Northern East", region_code: "GHNE", latitude: 9.9500, longitude: -0.8333, main_crops: ["groundnut", "yams", "cassava"] },
+    { name: "Ahamansu", region: "Oti", region_code: "GHOT", latitude: 6.8000, longitude: 0.6000, main_crops: ["cocoa", "oil palm"] },
+    { name: "Kenyasi", region: "Ahafo", region_code: "GHAF", latitude: 6.7667, longitude: -2.1667, main_crops: ["cocoa", "plantain", "cassava"] },
+    { name: "Bawku", region: "Upper East", region_code: "GHUE", latitude: 11.0598, longitude: -0.4807, main_crops: ["groundnut", "sesame", "millet"] },
+    { name: "Akroso", region: "Central", region_code: "GHCP", latitude: 5.1750, longitude: -0.8680, main_crops: ["cocoa", "cassava", "plantain"] }
   ];
+  
+  
 
-  const handleStartMapping = () => {
-    navigate(`/field-mapping/${selectedRegion}`);
-  };
+  const filteredRegions = agricultureTowns.filter((region : any) => 
+    region.name.toLowerCase().includes(search.toLowerCase()) || 
+    region.region.toLowerCase().includes(search.toLowerCase())
+    || region.region_code.toLowerCase().includes(search.toLowerCase())
+  )
+  
+ 
+  
+
+  const isRegionValid = selectedRegion.length > 0 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23059669' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      </div>
-      
-      <div className="relative z-10 max-w-7xl mx-auto p-8">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full blur-lg opacity-30"></div>
-              <div className="relative bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-full">
-                <MapPin className="w-16 h-16 text-white" />
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      {/* Header */}
+      <div className="border-b border-emerald-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-2 rounded-lg">
+              <Leaf className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-emerald-900">AgriTech Field Mapper</h1>
+              <p className="text-sm text-emerald-600">Precision farming starts here</p>
             </div>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent mb-4">
-            AgriTech Field Mapping
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Transform your farming with precision field mapping and AI-powered agricultural insights. 
-            Select your region and start optimizing your crop management today.
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Region Selection */}
-          <Card className="h-fit shadow-2xl border-0 bg-gray-800/90 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-t-lg">
-              <CardTitle className="flex items-center text-xl">
-                <MapPin className="w-6 h-6 mr-3" />
-                Select Your Region
-              </CardTitle>
-              <CardDescription className="text-green-100">
-                Choose the region where your farm is located to get started with field mapping
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 p-8">
-              <div>
-                <Label htmlFor="region-select" className="text-gray-300 font-semibold">Region</Label>
-                <Input
-                  id="region-select"
-                  value={selectedRegion}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedRegion(e.target.value)}
-                  placeholder="Type or select a region"
-                  className="mt-2 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {ghanaRegions.map((region) => (
-                  <Button
-                    key={region.name}
-                    variant={selectedRegion === region.name ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedRegion(region.name)}
-                    className={`justify-start transition-all duration-200 ${
-                      selectedRegion === region.name 
-                        ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 shadow-lg' 
-                        : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-green-500 hover:bg-gray-600'
-                    }`}
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {region.name}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="pt-6 border-t border-gray-100">
-                <Button 
-                  onClick={handleStartMapping}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-200"
-                  size="lg"
+          <div className="flex gap-2">
+            {["region", "field", "crops", "review"].map((s, i) => (
+              <div key={s} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                    step === s
+                      ? "bg-emerald-600 text-white"
+                      : ["region", "field", "crops", "review"].indexOf(step) > i
+                        ? "bg-emerald-200 text-emerald-700"
+                        : "bg-gray-200 text-gray-600"
+                  }`}
                 >
-                  <Map className="w-5 h-5 mr-2" />
-                  Start Field Mapping
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                  {i + 1}
+                </div>
+                {i < 3 && (
+                  <div
+                    className={`w-8 h-0.5 mx-1 ${["region", "field", "crops", "review"].indexOf(step) > i ? "bg-emerald-200" : "bg-gray-200"}`}
+                  />
+                )}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Features */}
-          <div className="space-y-8">
-            <Card className="shadow-2xl border-0 bg-gray-800/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white rounded-t-lg">
-                <CardTitle className="text-xl">Advanced Mapping Features</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 p-8">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-3 rounded-xl shadow-lg">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-200 mb-1">Precise Field Drawing</h4>
-                    <p className="text-gray-400 leading-relaxed">
-                      Draw exact field boundaries with satellite imagery and intuitive mapping tools for maximum accuracy
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="bg-gradient-to-br from-blue-400 to-cyan-500 p-3 rounded-xl shadow-lg">
-                    <Map className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-200 mb-1">AI-Powered Analysis</h4>
-                    <p className="text-gray-400 leading-relaxed">
-                      Get comprehensive agricultural insights including yield predictions, disease risks, and market analysis
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="bg-gradient-to-br from-purple-400 to-pink-500 p-3 rounded-xl shadow-lg">
-                    <ArrowRight className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-200 mb-1">Smart Crop Management</h4>
-                    <p className="text-gray-400 leading-relaxed">
-                      Track crops, varieties, and receive personalized recommendations for optimal farm management
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Selected Region Info */}
-            {selectedRegion && (
-              <Card className="shadow-2xl border-0 bg-gray-800/90 backdrop-blur-sm">
-                <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white rounded-t-lg">
-                  <CardTitle className="flex items-center text-xl">
-                    <Badge variant="secondary" className="mr-3 bg-white/20 text-white border-white/30">
-                      Selected
-                    </Badge>
-                    {selectedRegion}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                  {ghanaRegions.find(r => r.name === selectedRegion) ? (
-                    <div className="space-y-4">
-                      <div className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 p-4 rounded-lg border border-green-700">
-                        <p className="text-gray-300">
-                          <span className="font-semibold text-green-400">Description:</span> {ghanaRegions.find(r => r.name === selectedRegion)?.description}
-                        </p>
-                      </div>
-                      <div className="bg-gradient-to-r from-blue-900/50 to-cyan-900/50 p-4 rounded-lg border border-blue-700">
-                        <p className="text-gray-300">
-                          <span className="font-semibold text-blue-400">Coordinates:</span> {ghanaRegions.find(r => r.name === selectedRegion)?.coordinates}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gradient-to-r from-gray-800/50 to-slate-800/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-400">
-                        Custom region selected. The map will center on this location.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-16">
-          <div className="inline-flex items-center space-x-2 bg-gray-800/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg border border-gray-700/20">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-gray-300 font-medium">
-              Powered by AgriTech AI • Precision Agriculture for Modern Farmers
-            </p>
+            ))}
           </div>
         </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Step 1: Region Selection */}
+        {step === "region" && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-bold text-emerald-900 mb-2">Select Your Region</h2>
+              <p className="text-gray-600">Choose the region where your farm is located</p>
+              {/* search input, text color gray-500 */}
+              <Input type="text" 
+              placeholder="Search for a region" className="w-full text-gray-500" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {filteredRegions.length > 0 ? filteredRegions.map((region : any) => (
+                <button
+                  key={region.name}
+                  onClick={() => setSelectedRegion(region.name)}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    selectedRegion === region.name
+                      ? "border-emerald-600 bg-emerald-50 shadow-lg"
+                      : "border-gray-200 bg-white hover:border-emerald-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <MapPin
+                      className={`w-5 h-5 flex-shrink-0 ${selectedRegion === region.name ? "text-emerald-600" : "text-gray-400"}`}
+                    />
+                    {selectedRegion === region.name && <CheckCircle2 className="w-5 h-5 text-emerald-600 ml-auto" />}
+                  </div>
+                  <h3
+                    className={`font-semibold ${selectedRegion === region.name ? "text-emerald-900" : "text-gray-900"}`}
+                  >
+                    {region.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">{region.region}</p>
+                </button>
+              )) : (
+                <div className="text-gray-500 text-center">No regions found matching your search</div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-4 pt-8">
+              <Button
+                onClick={() => window.location.href = `/field-mapping/${selectedRegion}`}
+                disabled={!isRegionValid}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+ 
+      </div>
     </div>
-  );
+  )
 }

@@ -15,7 +15,8 @@ class ChatController extends Controller
             // Log the request for debugging
             Log::info('Chat request received', [
                 'request_data' => $request->all(),
-                'headers' => $request->headers->all()
+                'headers' => $request->headers->all(),
+                'csrf_token' => $request->header('X-CSRF-TOKEN')
             ]);
             
             $messages = $request->input('messages', []);
