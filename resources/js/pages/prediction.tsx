@@ -1090,7 +1090,7 @@ export default function AgriSenseDashboard({
             </main>
             
             {/* AI Chatbot */}
-            {/* <AIChatbot predictionData={prediction} /> */}
+            <AIChatbot predictionData={prediction} />
         </div>
     );
 }
